@@ -45,5 +45,4 @@ profileSchema.methods.generateAccessToken = function () {
 };
 
 const profileModel = mongoose.model("profileModel", profileSchema);
-
 module.exports = { profileModel };
