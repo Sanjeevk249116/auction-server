@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const { routers } = require("./routes/router");
+const { ApiError } = require("./utils/apiError");
 const app = express();
 
 app.use(express.json({ limit: "1mb" }));
@@ -15,6 +16,7 @@ app.use(
 );
 
 app.use("/", routers);
-app.use((req, res) => res.status(404).send("The requested url is not found."));
-
+app.use((req, res) => {
+  throw new ApiError(400, "The requested url is not found.");
+});
 module.exports = { app };

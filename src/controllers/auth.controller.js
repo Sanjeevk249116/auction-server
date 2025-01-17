@@ -40,7 +40,6 @@ const auctionAuthenticate = asyncHandler(async (req, res) => {
     });
   }
 
-  console.log(profile)
   const auctionToken =await generateToken(profile?._id);
   return res.status(200).json((auctionToken?.auctionToken));
 });
