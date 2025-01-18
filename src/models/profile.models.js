@@ -13,11 +13,6 @@ const profileSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    accountType: {
-      type: String,
-      enum: ["seller", "buyer", "admin"],
-      default: "buyer",
-    },
     phoneNumber: {
       type: String,
       required: true,
@@ -26,6 +21,14 @@ const profileSchema = new mongoose.Schema(
     verifiedUser: {
       type: Boolean,
       default: false,
+    },
+    accountSetUp: {
+      type: Boolean,
+      default: false,
+    },
+    oragnization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "organizationModel",
     },
     auctionToken: {
       type: String,

@@ -40,8 +40,27 @@ const auctionAuthenticate = asyncHandler(async (req, res) => {
     });
   }
 
-  const auctionToken =await generateToken(profile?._id);
-  return res.status(200).json((auctionToken?.auctionToken));
+  const auctionToken = await generateToken(profile?._id);
+  return res.status(200).json(auctionToken?.auctionToken);
 });
 
-module.exports = { auctionAuthenticate };
+const profileLogout = asyncHandler(async (req, res) => {
+  try {
+    await profileModel.findByIdAndUpdate(
+      req.userId,
+      {
+        $unset: {
+          auctionToken: "",
+        },
+      },
+      {
+        new: true,
+      }
+    );
+    return res.status(200).json(new ApiResponse(200, "logout successfully."));
+  } catch (error) {
+    throw new ApiError(400, "Unable to logout this session");
+  }
+});
+
+module.exports = { auctionAuthenticate,profileLogout };
