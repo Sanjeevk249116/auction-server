@@ -38,6 +38,7 @@ const craeteOrganization = asyncHandler(async (req, res) => {
         organizationName,
         GSTIN,
         owner: userId,
+        organizationId: generateId(organizationName),
       }, // Update or create these fields
       {
         new: true, // Return the updated document

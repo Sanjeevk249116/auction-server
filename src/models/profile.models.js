@@ -18,6 +18,11 @@ const profileSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    accountType: {
+      type: String,
+      enum: ["seller", "buyer", "admin"],
+      default: "buyer",
+    },
     verifiedUser: {
       type: Boolean,
       default: false,
@@ -41,6 +46,7 @@ profileSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this._id,
+      accountType: this.accountType,
     },
     process.env.AUCTION_TOKEN_SECRET,
     { expiresIn: process.env.AUCTION_TOKEN_EXPIRY }

@@ -13,4 +13,12 @@ const getUserFromAuthService = async (userId) => {
   }
 };
 
-module.exports = { getUserFromAuthService };
+const generateId = (orgName) => {
+  const orgPrefix = orgName.slice(0, 3).toUpperCase();
+  const randomDigits = Math.floor(1000 + Math.random() * 9000);
+  const organizationId = `${orgPrefix}${randomDigits}`;
+
+  return organizationId;
+};
+
+module.exports = { getUserFromAuthService, generateId };

@@ -15,15 +15,15 @@ const {
   selectScrapMaterial,
 } = require("../controllers/profile");
 const { upload } = require("../middleware/multer.middleware");
-const routers = express.Router();
+const buyerRouters = express.Router();
 
 // secure routes
-routers.post("/user/authenticate", authenticateUser, auctionAuthenticate);
-routers.put("/user/logout", validAuth, profileLogout);
-routers.get("/user/profile", validAuth, userProfile);
-routers.put("/update/organization", validAuth, craeteOrganization);
-routers.get("/read/organization", validAuth, userOrganization);
-routers.put(
+buyerRouters.post("/user/authenticate", authenticateUser, auctionAuthenticate);
+buyerRouters.put("/user/logout", validAuth, profileLogout);
+buyerRouters.get("/user/profile", validAuth, userProfile);
+buyerRouters.put("/update/organization", validAuth, craeteOrganization);
+buyerRouters.get("/read/organization", validAuth, userOrganization);
+buyerRouters.put(
   "/upload/multi-documents",
   validAuth,
   upload.fields([
@@ -50,16 +50,16 @@ routers.put(
   ]),
   uploadDocumentInOrganization
 );
-routers.post(
+buyerRouters.post(
   "/material-classification/create",
   validAuth,
   addMaterialClassification
 );
-routers.get("/material-classification/read", validAuth, allScrapList);
-routers.put(
+buyerRouters.get("/material-classification/read", validAuth, allScrapList);
+buyerRouters.put(
   "/organization/update/add-classification",
   validAuth,
   selectScrapMaterial
 );
 
-module.exports = { routers };
+module.exports = { buyerRouters };

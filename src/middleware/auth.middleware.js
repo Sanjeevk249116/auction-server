@@ -8,7 +8,7 @@ const authenticateUser = asyncHandler(async (req, res, next) => {
     throw new ApiError(401, "Access denied!");
   }
   try {
-    const decodedUserToken = await jwt.verify(
+    const decodedUserToken = jwt.verify(
       token,
       process.env.ACCESS_TOKEN_SECRET
     );

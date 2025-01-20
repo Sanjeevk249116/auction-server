@@ -5,6 +5,9 @@ const orgnizationSchema = new mongoose.Schema(
     organizationName: {
       type: String,
     },
+    organizationId: {
+      type: String,
+    },
     accountVerify: {
       type: Boolean,
       default: false,

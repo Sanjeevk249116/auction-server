@@ -1,8 +1,9 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const { routers } = require("./routes/router");
 const { ApiError } = require("./utils/apiError");
+const { buyerRouters } = require("./routes/buyerRouter");
+const { adminRouter } = require("./routes/adminRouter");
 const app = express();
 
 app.use(express.json({ limit: "1mb" }));
@@ -15,7 +16,10 @@ app.use(
   })
 );
 
-app.use("/", routers);
+app.use("/",adminRouter)
+app.use("/", buyerRouters);
+
+
 app.use((req, res) => {
   throw new ApiError(400, "The requested url is not found.");
 });
