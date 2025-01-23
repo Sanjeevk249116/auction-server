@@ -14,7 +14,6 @@ const getUserFromAuthService = async (userId) => {
 };
 
 const generateId = (orgName) => {
-  console.log(orgName)
   const orgPrefix = orgName.slice(0, 3).toUpperCase();
   const randomDigits = Math.floor(1000 + Math.random() * 9000);
   const organizationId = `${orgPrefix}${randomDigits}`;

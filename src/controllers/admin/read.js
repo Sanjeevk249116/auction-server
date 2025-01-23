@@ -4,6 +4,8 @@ const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
 const { coordinatorModel } = require("../../models/coordinator");
+const { auctionModel } = require("../../models/auction");
+const { documentUploadModel } = require("../../models/document");
 
 const readAllSeller = asyncHandler(async (req, res) => {
   try {
@@ -112,4 +114,58 @@ const readCoordinator = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { readAllSeller, readAllBuyer, readSingleAccount,readCoordinator };
+const readSingleAuction = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const singleAuction = await auctionModel.findById(id);
+  if (!singleAuction) {
+    throw new ApiError(400, "Auction not found.");
+  }
+
+  const auctionDetails = await auctionModel.aggregate([
+    { $match: { _id: new mongoose.Types.ObjectId(id) } },
+    {
+      $lookup: {
+        from: "offersmodels",
+        localField: "offers",
+        foreignField: "_id",
+        as: "offers",
+        pipeline: [
+          {
+            $lookup: {
+              from: "scrapimagemodels",
+              localField: "offerImage",
+              foreignField: "_id",
+              as: "offerImage",
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  return res.status(200).json(new ApiResponse(200, auctionDetails[0]));
+});
+
+const readClassificationMaterial = asyncHandler(async (req, res) => {
+  const scrapList = await materialClassificationModel.find();
+  return res.status(200).json(new ApiResponse(200, scrapList));
+});
+
+const readAllDocuments = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const organization = await organizationModel.findById(id);
+  const document = await documentUploadModel
+    .find({ profile: organization.owner })
+    .select("-profile");
+  return res.status(200).json(new ApiResponse(200, document));
+});
+
+module.exports = {
+  readAllSeller,
+  readAllBuyer,
+  readSingleAccount,
+  readCoordinator,
+  readSingleAuction,
+  readClassificationMaterial,
+  readAllDocuments,
+};

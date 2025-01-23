@@ -3,6 +3,10 @@ const { ApiError } = require("../../utils/apiError");
 const { addDateAndTime } = require("../../helper");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
+const { offersModel } = require("../../models/offer");
+const { uploadOnCloudinary } = require("../../utils/cloudinary");
+const { scrapImageModels } = require("../../models/scrapImage.model");
+const { materialClassificationModel } = require("../../models/MaterialScrap");
 
 const createAuction = asyncHandler(async (req, res) => {
   const {
@@ -64,18 +68,151 @@ const createAuction = asyncHandler(async (req, res) => {
     sellerId: id,
   });
 
-  console.log("Before save - auctionId:", auctionDetails.auctionId);
-  console.log("Before save - isNew:", auctionDetails.isNew);
-  
   const savedAuction = await auctionDetails.save();
-  
-  console.log("After save - auctionId:", savedAuction.auctionId);
-  
-
 
   return res
     .status(200)
-    .json(new ApiResponse(200, "auction created successfully."));
+    .json(new ApiResponse(200, savedAuction, "auction created successfully."));
 });
 
-module.exports = { createAuction };
+const createOffer = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const auction = await auctionModel.findById(id);
+  if (!auction) {
+    throw new ApiError(400, "Auction not found.");
+  }
+  const {
+    location,
+    EMDAmount,
+    scrapDetails,
+    maximumBid,
+    minimumBid,
+    liftingPeriod,
+    ItTCSTaxes,
+    GSTTaxes,
+    offerSchedule,
+    requiresPCBCertificate,
+    description,
+    startingPrice,
+  } = req.body;
+
+  const scrapDetailValue = JSON.parse(scrapDetails);
+  const offerSchedules = JSON.parse(offerSchedule);
+
+  const scrapType = await offersModel.findOne({
+    "scrapDetails.type": scrapDetailValue.type,
+  });
+  if (scrapType) {
+    throw new ApiError(400, "Scrap type is already added.");
+  }
+
+  const offerTime = {
+    startingTime: addDateAndTime(
+      auction?.auctionSchedule.startDate,
+      offerSchedules.startingTime
+    ),
+    endingTime: addDateAndTime(
+      auction?.auctionSchedule.startDate,
+      offerSchedules.endingTime
+    ),
+  };
+
+  const offer = await offersModel({
+    location,
+    EMDAmount,
+    scrapDetails: scrapDetailValue,
+    maximumBid,
+    minimumBid,
+    liftingPeriod,
+    ItTCSTaxes,
+    GSTTaxes,
+    offerSchedule: offerTime,
+    requiresPCBCertificate,
+    description,
+    startingPrice,
+    auctionId: id,
+  });
+  const saveOffer = await offer.save();
+  if (!saveOffer) {
+    throw new ApiError(400, "Something failed during create offer.");
+  }
+
+  if (req.files?.photo1?.length > 0) {
+    try {
+      const photos = {};
+      const uploadedPhotoUrls = {};
+
+      // Iterate over the photo keys dynamically
+      for (let i = 1; i <= 5; i++) {
+        const photoKey = `photo${i}`;
+        const photoFile = req.files?.[photoKey]?.[0]?.path;
+
+        // Only process if the photo exists
+        if (photoFile) {
+          const photoUrl = await uploadOnCloudinary(photoFile);
+          uploadedPhotoUrls[photoKey] = photoUrl.url;
+        }
+      }
+      // Only save non-empty fields in the database
+      const uploadOfferImage = await scrapImageModels.create(uploadedPhotoUrls);
+      // Update the offer model with the new image references
+      await offersModel.findByIdAndUpdate(
+        saveOffer?._id,
+        {
+          $set: { offerImage: uploadOfferImage?._id },
+        },
+        {
+          new: true,
+        }
+      );
+    } catch (error) {
+      await offersModel.findByIdAndDelete(saveOffer?._id);
+      throw new ApiError(500, "Internal server error while uploading photos.");
+    }
+  }
+
+  const auctionDetails = await auctionModel.findByIdAndUpdate(
+    id,
+    {
+      $push: {
+        offers: saveOffer._id,
+      },
+    },
+    { new: true }
+  );
+
+  if (!auctionDetails) {
+    throw new ApiError(400, "Something failed.");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Offer created successfully."));
+});
+
+const addMaterialClassification = asyncHandler(async (req, res) => {
+  const { materialClassification } = req.body;
+  if (
+    !Array.isArray(materialClassification) ||
+    materialClassification.length === 0
+  ) {
+    throw new ApiError(
+      400,
+      "Material Classification must be a non-empty array."
+    );
+  }
+
+  try {
+    const documents = materialClassification.map((classification) => ({
+      materialClassification: classification,
+    }));
+    await materialClassificationModel.insertMany(documents, { ordered: false });
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Add Scrap successfully."));
+  } catch (error) {
+    throw new ApiError(400, "Failed during add material Scrap");
+  }
+});
+
+module.exports = { createAuction, createOffer, addMaterialClassification };

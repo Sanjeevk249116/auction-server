@@ -1,3 +1,4 @@
+const { generateId } = require("../config/authDetails");
 const { documentUploadModel } = require("../models/document");
 const { materialClassificationModel } = require("../models/MaterialScrap");
 const { organizationModel } = require("../models/organization.models");
@@ -58,6 +59,7 @@ const craeteOrganization = asyncHandler(async (req, res) => {
         )
       );
   } catch (error) {
+    console.log(error);
     throw new ApiError(
       500,
       "Internal server error while creating/updating organization."
@@ -72,82 +74,82 @@ const userOrganization = asyncHandler(async (req, res) => {
 
 const uploadDocumentInOrganization = asyncHandler(async (req, res) => {
   const userId = req.userId;
-  const pcbDocument = req.files?.PCB?.[0]?.path;
-  const goodAndServiceDocument =
-    req.files?.["Goods-And-Services-Tax"]?.[0]?.path;
-  const panDocument = req.files?.["PAN-Card"]?.[0]?.path;
-  const gstDocument = req.files?.GST?.[0]?.path;
-  const kycDocument = req.files?.KYC?.[0]?.path;
+  const requiredDocuments = [
+    "PCB",
+    "Goods-And-Services-Tax",
+    "PAN-Card",
+    "GST",
+    "KYC",
+  ];
 
-  // Validate if all required documents are provided
-  if (
-    !(
-      pcbDocument &&
-      goodAndServiceDocument &&
-      panDocument &&
-      gstDocument &&
-      kycDocument
-    )
-  ) {
-    throw new ApiError(400, "All documents are required.");
-  }
-  try {
-    const PCB = await uploadOnCloudinary(pcbDocument);
-    const GST = await uploadOnCloudinary(gstDocument);
-    const GoodsAndServicesTax = await uploadOnCloudinary(
-      goodAndServiceDocument
-    );
-    const PANCard = await uploadOnCloudinary(panDocument);
-    const KYC = await uploadOnCloudinary(kycDocument);
+  const missingDocuments = requiredDocuments.filter(
+    (doc) => !req.files?.[doc]?.[0]?.path
+  );
 
-    await documentUploadModel.findOneAndUpdate(
-      { profile: userId },
-      {
-        PCB: PCB?.url,
-        GST: GST?.url,
-        GoodsAndServicesTax: GoodsAndServicesTax?.url,
-        PANCard: PANCard?.url,
-        KYC: KYC?.url,
-        profile: userId,
-      },
-      {
-        new: true, // Return the updated document
-        upsert: true, // Create the document if it doesn't exist
-        setDefaultsOnInsert: true, // Apply default values if creating
-      }
-    );
-  } catch (error) {
-    console.log(error);
-    throw new ApiError(500, "failed to upload files");
-  }
-  // Return success response
-  return res
-    .status(200)
-    .json(new ApiResponse(200, "Documents uploaded successfully."));
-});
-
-const addMaterialClassification = asyncHandler(async (req, res) => {
-  const { materialClassification } = req.body;
-  if (
-    !Array.isArray(materialClassification) ||
-    materialClassification.length === 0
-  ) {
+  if (missingDocuments.length > 0) {
     throw new ApiError(
       400,
-      "Material Classification must be a non-empty array."
+      `Missing documents: ${missingDocuments.join(", ")}`
     );
   }
 
   try {
-    const documents = materialClassification.map((classification) => ({
-      materialClassification: classification,
-    }));
-    await materialClassificationModel.insertMany(documents, { ordered: false });
+    const documentUploads = await Promise.all([
+      uploadOnCloudinary(req.files.PCB[0].path),
+      uploadOnCloudinary(req.files["Goods-And-Services-Tax"][0].path),
+      uploadOnCloudinary(req.files["PAN-Card"][0].path),
+      uploadOnCloudinary(req.files.GST[0].path),
+      uploadOnCloudinary(req.files.KYC[0].path),
+    ]);
+
+    const [PCB, GoodsAndServicesTax, PANCard, GST, KYC] = documentUploads;
+    const document = [
+      {
+        fileType: "PCB",
+        fileName: "pcb",
+        url: PCB.url,
+        profile: userId,
+        fileSize: PCB.bytes,
+      },
+      {
+        fileType: "GST",
+        fileName: "gst",
+        url: GST.url,
+        profile: userId,
+        fileSize: GST.bytes,
+      },
+      {
+        fileType: "Good and Service tax",
+        fileName: "goodsAndServicesTax",
+        url: GoodsAndServicesTax.url,
+        profile: userId,
+        fileSize: GoodsAndServicesTax.bytes,
+      },
+      {
+        fileType: "PAN card",
+        fileName: "pan",
+        url: PANCard.url,
+        profile: userId,
+        fileSize: PANCard.bytes,
+      },
+      {
+        fileType: "KYC",
+        fileName: "kyc",
+        url: KYC.url,
+        profile: userId,
+        fileSize: KYC.bytes,
+      },
+    ];
+
+    await documentUploadModel.deleteMany({ profile: userId });
+
+    const fileData = await documentUploadModel.insertMany(document);
+
     return res
       .status(200)
-      .json(new ApiResponse(200, "Add Scrap successfully."));
+      .json(new ApiResponse(200, fileData, "Documents uploaded successfully."));
   } catch (error) {
-    throw new ApiError(400, "Failed during add material Scrap");
+    throw new ApiError(500, `Failed to upload documents: ${error.message}`);
   }
 });
 
@@ -189,6 +191,5 @@ module.exports = {
   craeteOrganization,
   uploadDocumentInOrganization,
   allScrapList,
-  addMaterialClassification,
   selectScrapMaterial,
 };

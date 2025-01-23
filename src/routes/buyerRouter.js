@@ -10,7 +10,6 @@ const {
   userOrganization,
   craeteOrganization,
   uploadDocumentInOrganization,
-  addMaterialClassification,
   allScrapList,
   selectScrapMaterial,
 } = require("../controllers/profile");
@@ -49,11 +48,6 @@ buyerRouters.put(
     },
   ]),
   uploadDocumentInOrganization
-);
-buyerRouters.post(
-  "/material-classification/create",
-  validAuth,
-  addMaterialClassification
 );
 buyerRouters.get("/material-classification/read", validAuth, allScrapList);
 buyerRouters.put(

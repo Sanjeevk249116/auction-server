@@ -99,7 +99,7 @@ const auctionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "organizationModel",
     },
-    OfferId: [
+    offers: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "offerModel",
@@ -145,6 +145,11 @@ const auctionSchema = new mongoose.Schema(
     catalogue: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "catalogueModel",
+    },
+    status: {
+      type: String,
+      enum: ["live", "today", "upcomming", "completed"],
+      default: "upcomming",
     },
   },
   { timestamps: true }

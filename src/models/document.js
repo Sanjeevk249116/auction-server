@@ -2,25 +2,19 @@ const mongoose = require("mongoose");
 
 const documentSchema = new mongoose.Schema(
   {
-    PCB: {
+    fileName: {
       type: String,
-      required: true,
     },
-    GST: {
+    fileType: {
       type: String,
-      required: true,
     },
-    GoodsAndServicesTax: {
+    fileSize: {
       type: String,
-      required: true,
     },
-    PANCard: {
+    status: {
       type: String,
-      required: true,
-    },
-    KYC: {
-      type: String,
-      required: true,
+      enum: ["pending", "verified", "rejected"],
+      default: "pending",
     },
     profile: {
       type: mongoose.Schema.Types.ObjectId,
