@@ -11,6 +11,8 @@ const { adminAuthenticate } = require("../middleware/adminAuthenticate");
 const {
   createCoordinator,
   updateCoordinator,
+  verifyDocument,
+  rejectDocument,
 } = require("../controllers/admin/update");
 const { deleteCoordinator } = require("../controllers/admin/delete");
 const {
@@ -127,6 +129,17 @@ adminRouter.get(
   "/documents/read/admin/all-documents/:id",
   adminAuthenticate,
   readAllDocuments
+);
+
+adminRouter.put(
+  "/documents/update/verify-document/:id",
+  adminAuthenticate,
+  verifyDocument
+);
+adminRouter.put(
+  "/documents/update/rejecte-document/:id",
+  adminAuthenticate,
+  rejectDocument
 );
 
 module.exports = { adminRouter };

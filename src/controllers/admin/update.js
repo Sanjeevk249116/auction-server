@@ -1,4 +1,5 @@
 const { coordinatorModel } = require("../../models/coordinator");
+const { documentUploadModel } = require("../../models/document");
 const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
@@ -49,7 +50,7 @@ const updateCoordinator = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
     const { name, phoneNumber, email, address, position, languages } = req.body;
-    console.log(req.body,id)
+    console.log(req.body, id);
     if (
       !(
         name ||
@@ -76,5 +77,43 @@ const updateCoordinator = asyncHandler(async (req, res) => {
   }
 });
 
+const verifyDocument = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const verifiedDocument = await documentUploadModel.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          status: "verified",
+        },
+      },
+      {
+        new: true,
+      }
+    );
+    return res.status(200).json(new ApiResponse(200, verifiedDocument));
+  } catch (error) {
+    throw new ApiError(400, "failed to verify document.");
+  }
+});
+const rejectDocument = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const rejectedDocument = await documentUploadModel.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          status: "rejected",
+        },
+      },
+      {
+        new: true,
+      }
+    );
+    return res.status(200).json(new ApiResponse(200, rejectedDocument));
+  } catch (error) {
+    throw new ApiError(400, "failed to verify document.");
+  }
+});
 
-module.exports = { createCoordinator, updateCoordinator };
+module.exports = { createCoordinator, updateCoordinator, verifyDocument,rejectDocument };
