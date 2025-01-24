@@ -3,6 +3,7 @@ const { documentUploadModel } = require("../models/document");
 const { materialClassificationModel } = require("../models/MaterialScrap");
 const { organizationModel } = require("../models/organization.models");
 const { profileModel } = require("../models/profile.models");
+const { walletModel } = require("../models/wallet.model");
 const { ApiError } = require("../utils/apiError");
 const { ApiResponse } = require("../utils/apiResponse");
 const { asyncHandler } = require("../utils/asyncHandler");
@@ -27,47 +28,60 @@ const userProfile = asyncHandler(async (req, res) => {
 });
 
 const craeteOrganization = asyncHandler(async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { location, organizationName, GSTIN } = req.body;
+  const userId = req.userId;
+  const { location, organizationName, GSTIN, panCard } = req.body;
 
-    if (!location || !organizationName || !GSTIN) {
-      throw new ApiError(400, "All fields are required.");
-    }
+  const requiredFields = ["organizationName", "location", "GSTIN", "panCard"];
+  const missingFields = checkMissingFields(req.body, requiredFields);
 
-    const organization = await organizationModel.findOneAndUpdate(
-      { GSTIN },
-      {
-        location,
-        organizationName,
-        GSTIN,
-        owner: userId,
-        organizationId: generateId(organizationName),
-      }, // Update or create these fields
-      {
-        new: true, // Return the updated document
-        upsert: true, // Create the document if it doesn't exist
-        setDefaultsOnInsert: true, // Apply default values if creating
-      }
-    );
-
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          organization.isNew
-            ? "Organization created successfully."
-            : "Organization updated successfully."
-        )
-      );
-  } catch (error) {
-    console.log(error);
+  if (missingFields.length > 0) {
     throw new ApiError(
-      500,
-      "Internal server error while creating/updating organization."
+      400,
+      `The following fields are missing or empty: ${missingFields.join(", ")}`
     );
   }
+
+  const organization = await organizationModel.findOneAndUpdate(
+    { GSTIN },
+    {
+      location,
+      organizationName,
+      GSTIN,
+      panCard,
+      owner: userId,
+      organizationId: generateId(organizationName),
+    }, // Update or create these fields
+    {
+      new: true, // Return the updated document
+      upsert: true, // Create the document if it doesn't exist
+      setDefaultsOnInsert: true, // Apply default values if creating
+    }
+  );
+
+  await walletModel.findOneAndUpdate(
+    {
+      profile: userId,
+    },
+    {
+      profile: userId,
+    },
+    {
+      new: true, // Return the updated document
+      upsert: true, // Create the document if it doesn't exist
+      setDefaultsOnInsert: true, // Apply default values if creating
+    }
+  );
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        organization.isNew
+          ? "Organization created successfully."
+          : "Organization updated successfully."
+      )
+    );
 });
 
 const userOrganization = asyncHandler(async (req, res) => {

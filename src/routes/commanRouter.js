@@ -7,7 +7,10 @@ const {
   readAllAuction,
   readCompletedAuction,
   readSingleAuction,
+  downloadSingleDocument,
 } = require("../controllers/commonController/read");
+const { myWallet } = require("../controllers/commonController/read");
+const { addBankAccount } = require("../controllers/commonController/update");
 const commanRouter = express.Router();
 
 commanRouter.get("/auction/read/all-events", validAuth, readAllAuction);
@@ -36,5 +39,13 @@ commanRouter.get(
   "/auction/read/upcoming-public-auctions",
   readUpcommingAuction
 );
+commanRouter.get(
+  "/documents/read/single-file/:id",
+  validAuth,
+  downloadSingleDocument
+);
+
+commanRouter.get("/wallet/read/my-wallet", validAuth, myWallet);
+commanRouter.put("/profile/update/add-bank-details", validAuth, addBankAccount);
 
 module.exports = { commanRouter };

@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
+const { documentUploadModel } = require("../../models/document");
+const { walletModel } = require("../../models/wallet.model");
 
 const readAllAuction = asyncHandler(async (req, res) => {
   try {
@@ -180,6 +182,44 @@ const readSingleAuction = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, auctionDetails[0]));
 });
 
+const downloadSingleDocument = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const document = await documentUploadModel.findById(id);
+    if (!document) {
+      throw new ApiError(404, "Document not found");
+    }
+    const fileUrl = document.url;
+    if (!fileUrl) {
+      throw new ApiError(404, "File not found");
+    }
+
+    return res.status(200).json(new ApiResponse(200, { fileUrl }));
+  } catch (error) {
+    throw new ApiError(500, "Error retrieving file URL", error);
+  }
+});
+
+const myWallet = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const wallet = await walletModel.aggregate([
+    {
+      $match: { profile: new mongoose.Types.ObjectId(userId) },
+    },
+    {
+      $lookup: {
+        from: "bankaccountmodels",
+        localField: "bankAccounts",
+        foreignField: "_id",
+        as: "bankAccounts",
+      },
+    },
+  ]);
+
+  return res.status(200).json(new ApiResponse(200, wallet[0]));
+});
+
 module.exports = {
   readAllAuction,
   readTodayAuction,
@@ -187,4 +227,6 @@ module.exports = {
   readCompletedAuction,
   singleSellerAuctionList,
   readSingleAuction,
+  downloadSingleDocument,
+  myWallet,
 };

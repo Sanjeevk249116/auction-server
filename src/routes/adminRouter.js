@@ -6,7 +6,6 @@ const {
   readAllBuyer,
   readCoordinator,
   readAllDocuments,
-  downloadSingleDocument,
 } = require("../controllers/admin/read");
 const { adminAuthenticate } = require("../middleware/adminAuthenticate");
 const {
@@ -110,11 +109,7 @@ adminRouter.put(
   adminAuthenticate,
   rejectDocument
 );
-adminRouter.get(
-  "/documents/read/single-file/:id",
-  adminAuthenticate,
-  downloadSingleDocument
-);
+
 adminRouter.put(
   "/profile/update/admin/verify-account/:id",
   adminAuthenticate,

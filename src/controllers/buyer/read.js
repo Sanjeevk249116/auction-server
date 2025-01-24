@@ -1,4 +1,7 @@
 const { auctionModel } = require("../../models/auction");
+const { documentUploadModel } = require("../../models/document");
+const { organizationModel } = require("../../models/organization.models");
+const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
 
@@ -35,4 +38,16 @@ const getAllAuctionAnylitics = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, analytics));
 });
 
-module.exports = { getAllAuctionAnylitics };
+const readBuyerDocuments = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const organization = await organizationModel.findOne({ owner: userId });
+  if (!organization) {
+    throw new ApiError(400, "organization not found.");
+  }
+  const document = await documentUploadModel
+    .find({ organization: organization?._id })
+    .select("-organization");
+  return res.status(200).json(new ApiResponse(200, document));
+});
+
+module.exports = { getAllAuctionAnylitics, readBuyerDocuments };

@@ -4,7 +4,6 @@ const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
 const { coordinatorModel } = require("../../models/coordinator");
-const { auctionModel } = require("../../models/auction");
 const { documentUploadModel } = require("../../models/document");
 
 const readAllSeller = asyncHandler(async (req, res) => {
@@ -113,8 +112,6 @@ const readCoordinator = asyncHandler(async (req, res) => {
   }
 });
 
-
-
 const readClassificationMaterial = asyncHandler(async (req, res) => {
   const scrapList = await materialClassificationModel.find();
   return res.status(200).json(new ApiResponse(200, scrapList));
@@ -128,24 +125,7 @@ const readAllDocuments = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, document));
 });
 
-const downloadSingleDocument = asyncHandler(async (req, res) => {
-  try {
-    const { id } = req.params;
 
-    const document = await documentUploadModel.findById(id);
-    if (!document) {
-      throw new ApiError(404, "Document not found");
-    }
-    const fileUrl = document.url;
-    if (!fileUrl) {
-      throw new ApiError(404, "File not found");
-    }
-
-    return res.status(200).json(new ApiResponse(200, { fileUrl }));
-  } catch (error) {
-    throw new ApiError(500, "Error retrieving file URL", error);
-  }
-});
 
 module.exports = {
   readAllSeller,
@@ -154,5 +134,5 @@ module.exports = {
   readCoordinator,
   readClassificationMaterial,
   readAllDocuments,
-  downloadSingleDocument,
+
 };

@@ -15,7 +15,11 @@ const {
 } = require("../controllers/profile");
 const { upload } = require("../middleware/multer.middleware");
 const { buyerAuthenticate } = require("../middleware/buyerAuthenticate");
-const { getAllAuctionAnylitics } = require("../controllers/buyer/read");
+const {
+  getAllAuctionAnylitics,
+  readBuyerDocuments,
+} = require("../controllers/buyer/read");
+const { uploadFiles } = require("../controllers/buyer/create");
 const buyerRouters = express.Router();
 
 // secure routes
@@ -62,6 +66,20 @@ buyerRouters.get(
   "/profile/read/analytics",
   buyerAuthenticate,
   getAllAuctionAnylitics
+);
+
+buyerRouters.get(
+  "/profile/read/all-documnets",
+  buyerAuthenticate,
+
+  readBuyerDocuments
+);
+
+buyerRouters.put(
+  "/profile/update/document",
+  buyerAuthenticate,
+  upload.single("document"),
+  uploadFiles
 );
 
 module.exports = { buyerRouters };
