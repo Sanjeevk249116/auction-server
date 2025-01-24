@@ -14,6 +14,8 @@ const {
   selectScrapMaterial,
 } = require("../controllers/profile");
 const { upload } = require("../middleware/multer.middleware");
+const { buyerAuthenticate } = require("../middleware/buyerAuthenticate");
+const { getAllAuctionAnylitics } = require("../controllers/buyer/read");
 const buyerRouters = express.Router();
 
 // secure routes
@@ -54,6 +56,12 @@ buyerRouters.put(
   "/organization/update/add-classification",
   validAuth,
   selectScrapMaterial
+);
+
+buyerRouters.get(
+  "/profile/read/analytics",
+  buyerAuthenticate,
+  getAllAuctionAnylitics
 );
 
 module.exports = { buyerRouters };

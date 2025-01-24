@@ -76,7 +76,6 @@ const readSingleAccount = asyncHandler(async (req, res) => {
   const { id } = req.params;
   try {
     const objectId = new mongoose.Types.ObjectId(id);
-    console.log(objectId);
     const sellerWithOwner = await organizationModel.aggregate([
       { $match: { _id: objectId } },
       {
@@ -114,37 +113,7 @@ const readCoordinator = asyncHandler(async (req, res) => {
   }
 });
 
-const readSingleAuction = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const singleAuction = await auctionModel.findById(id);
-  if (!singleAuction) {
-    throw new ApiError(400, "Auction not found.");
-  }
 
-  const auctionDetails = await auctionModel.aggregate([
-    { $match: { _id: new mongoose.Types.ObjectId(id) } },
-    {
-      $lookup: {
-        from: "offersmodels",
-        localField: "offers",
-        foreignField: "_id",
-        as: "offers",
-        pipeline: [
-          {
-            $lookup: {
-              from: "scrapimagemodels",
-              localField: "offerImage",
-              foreignField: "_id",
-              as: "offerImage",
-            },
-          },
-        ],
-      },
-    },
-  ]);
-
-  return res.status(200).json(new ApiResponse(200, auctionDetails[0]));
-});
 
 const readClassificationMaterial = asyncHandler(async (req, res) => {
   const scrapList = await materialClassificationModel.find();
@@ -183,7 +152,6 @@ module.exports = {
   readAllBuyer,
   readSingleAccount,
   readCoordinator,
-  readSingleAuction,
   readClassificationMaterial,
   readAllDocuments,
   downloadSingleDocument,

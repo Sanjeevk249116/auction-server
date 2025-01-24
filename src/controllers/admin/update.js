@@ -50,7 +50,7 @@ const updateCoordinator = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
     const { name, phoneNumber, email, address, position, languages } = req.body;
-    console.log(req.body, id);
+
     if (
       !(
         name ||

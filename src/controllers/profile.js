@@ -8,6 +8,8 @@ const { ApiResponse } = require("../utils/apiResponse");
 const { asyncHandler } = require("../utils/asyncHandler");
 const { checkMissingFields } = require("../utils/checkFields");
 const { uploadOnCloudinary } = require("../utils/cloudinary");
+const { sendMailToUser } = require("../utils/sendEmail");
+require("dotenv").config();
 
 const userProfile = asyncHandler(async (req, res) => {
   const userId = req.userId;
@@ -293,6 +295,7 @@ const iniviteNewSeller = asyncHandler(async (req, res) => {
     "panCard",
   ];
   const missingFields = checkMissingFields(req.body, requiredFields);
+
   if (missingFields.length > 0) {
     throw new ApiError(
       400,
@@ -315,34 +318,34 @@ const iniviteNewSeller = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Seller account is already created.");
   }
 
-  const profile = await profileModel.create(
-    {
-      email: user.email,
-      userName: user.name,
-      phoneNumber: user.phoneNumber,
-      accountType: "seller",
-      accountSetUp: true,
-    },
-    { new: true }
-  );
-  const organization = await organizationModel.create(
-    {
-      GSTIN,
-      accountType: "seller",
-      accountVerify: true,
-      location,
-      organizationId: generateId(organizationName),
-      organizationName,
-      organizationSetUp: true,
-      owner: profile?._id,
-      panCard: panCard,
-    },
-    {
-      new: true, // Return the updated document
-      upsert: true, // Create the document if it doesn't exist
-      setDefaultsOnInsert: true, // Apply default values if creating
-    }
-  );
+  const profile = await profileModel.create({
+    email: email,
+    userName: name,
+    phoneNumber: phoneNumber,
+    accountType: "seller",
+    accountSetUp: true,
+  });
+
+  const organization = await organizationModel.create({
+    GSTIN,
+    accountType: "seller",
+    accountVerify: "verified",
+    location,
+    organizationId: generateId(organizationName),
+    organizationName,
+    organizationSetUp: true,
+    owner: profile?._id,
+    panCard: panCard,
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Welcome!",
+    text: `Thank you for signing up with us. emailId:${email}  Password: InviteNewSeller@123`,
+  };
+
+  await sendMailToUser(mailOptions);
   return res.status(200).json(new ApiResponse(200, organization));
 });
 

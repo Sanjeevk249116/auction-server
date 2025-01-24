@@ -1,4 +1,5 @@
 const { auctionModel } = require("../../models/auction");
+const mongoose = require("mongoose");
 const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
@@ -147,10 +148,43 @@ const singleSellerAuctionList = asyncHandler(async (req, res) => {
   }
 });
 
+const readSingleAuction = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const singleAuction = await auctionModel.findById(id);
+  if (!singleAuction) {
+    throw new ApiError(400, "Auction not found.");
+  }
+
+  const auctionDetails = await auctionModel.aggregate([
+    { $match: { _id: new mongoose.Types.ObjectId(id) } },
+    {
+      $lookup: {
+        from: "offersmodels",
+        localField: "offers",
+        foreignField: "_id",
+        as: "offers",
+        pipeline: [
+          {
+            $lookup: {
+              from: "scrapimagemodels",
+              localField: "offerImage",
+              foreignField: "_id",
+              as: "offerImage",
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  return res.status(200).json(new ApiResponse(200, auctionDetails[0]));
+});
+
 module.exports = {
   readAllAuction,
   readTodayAuction,
   readUpcommingAuction,
   readCompletedAuction,
   singleSellerAuctionList,
+  readSingleAuction,
 };

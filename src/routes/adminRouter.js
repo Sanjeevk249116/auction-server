@@ -21,16 +21,8 @@ const {
   createOffer,
   addMaterialClassification,
 } = require("../controllers/admin/create");
-const { readSingleAuction } = require("../controllers/admin/read");
-const { handleDynamicFields } = require("../helper");
+
 const { upload } = require("../middleware/multer.middleware");
-const {
-  readAllAuction,
-  readTodayAuction,
-  readUpcommingAuction,
-  readCompletedAuction,
-  singleSellerAuctionList,
-} = require("../controllers/adminAuction/read");
 const {
   verifyAccountAndOrganization,
   blockrdAccountAndOrganization,
@@ -60,11 +52,6 @@ adminRouter.delete(
 );
 
 adminRouter.post("/create/auction/:id", adminAuthenticate, createAuction);
-adminRouter.get(
-  "/read/single-auction/:id",
-  adminAuthenticate,
-  readSingleAuction
-);
 adminRouter.post(
   "/create/offer/auction/:id",
   adminAuthenticate,
@@ -106,31 +93,7 @@ adminRouter.post(
   adminAuthenticate,
   addMaterialClassification
 );
-adminRouter.get(
-  "/auction/read/admin/all-events",
-  adminAuthenticate,
-  readAllAuction
-);
-adminRouter.get(
-  "/auction/read/admin/today-auctions",
-  adminAuthenticate,
-  readTodayAuction
-);
-adminRouter.get(
-  "/auction/read/upcoming-auctions",
-  adminAuthenticate,
-  readUpcommingAuction
-);
-adminRouter.get(
-  "/auction/read/admin/completed-auctions",
-  adminAuthenticate,
-  readCompletedAuction
-);
-adminRouter.get(
-  "/auction/read/admin/single-seller-auctions/:id",
-  adminAuthenticate,
-  singleSellerAuctionList
-);
+
 adminRouter.get(
   "/documents/read/admin/all-documents/:id",
   adminAuthenticate,
