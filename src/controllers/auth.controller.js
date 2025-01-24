@@ -29,15 +29,14 @@ const auctionAuthenticate = asyncHandler(async (req, res) => {
   });
 
   if (!profile) {
-    await profileModel.create({
-      email: user.email,
-      userName: user.name,
-      phoneNumber: user.phoneNumber,
-    });
-
-    profile = await profileModel.findOne({
-      $or: [{ email: user.email }, { phoneNumber: user.phoneNumber }],
-    });
+    profile = await profileModel.create(
+      {
+        email: user.email,
+        userName: user.name,
+        phoneNumber: user.phoneNumber,
+      },
+      { new: true }
+    );
   }
 
   const auctionToken = await generateToken(profile?._id);
@@ -63,4 +62,4 @@ const profileLogout = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { auctionAuthenticate,profileLogout };
+module.exports = { auctionAuthenticate, profileLogout };

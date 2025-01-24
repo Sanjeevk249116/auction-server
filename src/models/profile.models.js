@@ -24,8 +24,9 @@ const profileSchema = new mongoose.Schema(
       default: "buyer",
     },
     verifiedUser: {
-      type: Boolean,
-      default: false,
+      type: String,
+      enum: ["pending", "verified", "blocked"],
+      default: "pending",
     },
     accountSetUp: {
       type: Boolean,

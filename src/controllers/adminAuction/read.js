@@ -8,34 +8,53 @@ const readAllAuction = asyncHandler(async (req, res) => {
     const auctionType = req.query.auctionType;
     const skip = parseInt(req.query.skip) || 0;
     const limit = parseInt(req.query.limit) || 30;
-    const filter = auctionType ? { auctionType } : {};
-    const auctions = await auctionModel.find(filter).skip(skip).limit(limit);
-    return res.status(200).json(new ApiResponse(200, auctions));
-  } catch (error) {
-    throw new ApiError(400, "Failed to fetch auction list.");
-  }
-});
-const readTodayAuction = asyncHandler(async (req, res) => {
-  try {
-    const auctionType = req.query.auctionType;
-    const skip = parseInt(req.query.skip) || 0;
-    const limit = parseInt(req.query.limit) || 30;
-    const filter = { status: "today" };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const filter = {
+      "auctionSchedule.startDate": {
+        $gte: today,
+      },
+    };
+
     if (auctionType) {
       filter.auctionType = auctionType;
     }
     const auctions = await auctionModel.find(filter).skip(skip).limit(limit);
     return res.status(200).json(new ApiResponse(200, auctions));
   } catch (error) {
-    throw new ApiError(400, "Failed to fetch auction today.");
+    throw new ApiError(400, "Failed to fetch auction list.");
   }
 });
-const readUpcommingAuction = asyncHandler(async (req, res) => {
+
+const readTodayAuction = asyncHandler(async (req, res) => {
   try {
     const auctionType = req.query.auctionType;
     const skip = parseInt(req.query.skip) || 0;
     const limit = parseInt(req.query.limit) || 30;
-    const filter = { status: "upcomming" };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    await auctionModel.updateMany(
+      {
+        "auctionSchedule.startDate": {
+          $gte: today,
+          $lt: tomorrow,
+        },
+        status: { $ne: "today" },
+      },
+      { $set: { status: "today" } }
+    );
+
+    const filter = {
+      "auctionSchedule.startDate": {
+        $gte: today,
+        $lt: tomorrow,
+      },
+    };
+
     if (auctionType) {
       filter.auctionType = auctionType;
     }
@@ -46,19 +65,62 @@ const readUpcommingAuction = asyncHandler(async (req, res) => {
   }
 });
 
-const readCompletedAuction = asyncHandler(async (req, res) => {
+const readUpcommingAuction = asyncHandler(async (req, res) => {
   try {
     const auctionType = req.query.auctionType;
     const skip = parseInt(req.query.skip) || 0;
     const limit = parseInt(req.query.limit) || 30;
-    const filter = { status: "completed" };
+    const now = new Date();
+
+    await auctionModel.updateMany(
+      {
+        "auctionSchedule.startDate": { $gt: now },
+        status: { $ne: "upcomming" },
+      },
+      { $set: { status: "upcomming" } }
+    );
+
+    const filter = {
+      "auctionSchedule.startDate": {
+        $gte: now,
+      },
+    };
     if (auctionType) {
       filter.auctionType = auctionType;
     }
     const auctions = await auctionModel.find(filter).skip(skip).limit(limit);
     return res.status(200).json(new ApiResponse(200, auctions));
   } catch (error) {
-    throw new ApiError(400, "Failed to fetch auction today.");
+    console.log(error);
+    throw new ApiError(400, "Failed to fetch auction upcomming.");
+  }
+});
+
+const readCompletedAuction = asyncHandler(async (req, res) => {
+  try {
+    const auctionType = req.query.auctionType;
+    const skip = parseInt(req.query.skip) || 0;
+    const limit = parseInt(req.query.limit) || 30;
+    const filter = { status: "completed" };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Update status to completed for auctions before today
+    await auctionModel.updateMany(
+      {
+        "auctionSchedule.startDate": { $lt: today },
+        status: { $ne: "completed" },
+      },
+      { $set: { status: "completed" } }
+    );
+
+    if (auctionType) {
+      filter.auctionType = auctionType;
+    }
+    const auctions = await auctionModel.find(filter).skip(skip).limit(limit);
+    return res.status(200).json(new ApiResponse(200, auctions));
+  } catch (error) {
+    throw new ApiError(400, "Failed to fetch auction completed.");
   }
 });
 

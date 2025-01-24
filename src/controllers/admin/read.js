@@ -153,11 +153,29 @@ const readClassificationMaterial = asyncHandler(async (req, res) => {
 
 const readAllDocuments = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const organization = await organizationModel.findById(id);
   const document = await documentUploadModel
-    .find({ profile: organization.owner })
-    .select("-profile");
+    .find({ organization: id })
+    .select("-organization");
   return res.status(200).json(new ApiResponse(200, document));
+});
+
+const downloadSingleDocument = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const document = await documentUploadModel.findById(id);
+    if (!document) {
+      throw new ApiError(404, "Document not found");
+    }
+    const fileUrl = document.url;
+    if (!fileUrl) {
+      throw new ApiError(404, "File not found");
+    }
+
+    return res.status(200).json(new ApiResponse(200, { fileUrl }));
+  } catch (error) {
+    throw new ApiError(500, "Error retrieving file URL", error);
+  }
 });
 
 module.exports = {
@@ -168,4 +186,5 @@ module.exports = {
   readSingleAuction,
   readClassificationMaterial,
   readAllDocuments,
+  downloadSingleDocument,
 };

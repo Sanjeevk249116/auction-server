@@ -6,6 +6,7 @@ const {
   readAllBuyer,
   readCoordinator,
   readAllDocuments,
+  downloadSingleDocument,
 } = require("../controllers/admin/read");
 const { adminAuthenticate } = require("../middleware/adminAuthenticate");
 const {
@@ -30,6 +31,11 @@ const {
   readCompletedAuction,
   singleSellerAuctionList,
 } = require("../controllers/adminAuction/read");
+const {
+  verifyAccountAndOrganization,
+  blockrdAccountAndOrganization,
+  iniviteNewSeller,
+} = require("../controllers/profile");
 
 const adminRouter = express.Router();
 
@@ -140,6 +146,27 @@ adminRouter.put(
   "/documents/update/rejecte-document/:id",
   adminAuthenticate,
   rejectDocument
+);
+adminRouter.get(
+  "/documents/read/single-file/:id",
+  adminAuthenticate,
+  downloadSingleDocument
+);
+adminRouter.put(
+  "/profile/update/admin/verify-account/:id",
+  adminAuthenticate,
+  verifyAccountAndOrganization
+);
+
+adminRouter.put(
+  "/profile/update/admin/blocked-account/:id",
+  adminAuthenticate,
+  blockrdAccountAndOrganization
+);
+adminRouter.post(
+  "/authenticate/invte-industry",
+  adminAuthenticate,
+  iniviteNewSeller
 );
 
 module.exports = { adminRouter };

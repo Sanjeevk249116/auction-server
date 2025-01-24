@@ -21,4 +21,16 @@ const generateId = (orgName) => {
   return organizationId;
 };
 
-module.exports = { getUserFromAuthService, generateId };
+const addNewSeller = async (sellerObj) => {
+  try {
+    const response = await axios.post(
+      `${process.env.SERVER_URL}/register-newSeller`,
+      sellerObj
+    );
+    return response?.data?.data;
+  } catch (error) {
+    throw new ApiError(400, "unable to invite new seller.");
+  }
+};
+
+module.exports = { getUserFromAuthService, generateId, addNewSeller };

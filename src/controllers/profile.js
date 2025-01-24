@@ -1,4 +1,4 @@
-const { generateId } = require("../config/authDetails");
+const { generateId, addNewSeller } = require("../config/authDetails");
 const { documentUploadModel } = require("../models/document");
 const { materialClassificationModel } = require("../models/MaterialScrap");
 const { organizationModel } = require("../models/organization.models");
@@ -6,12 +6,13 @@ const { profileModel } = require("../models/profile.models");
 const { ApiError } = require("../utils/apiError");
 const { ApiResponse } = require("../utils/apiResponse");
 const { asyncHandler } = require("../utils/asyncHandler");
+const { checkMissingFields } = require("../utils/checkFields");
 const { uploadOnCloudinary } = require("../utils/cloudinary");
 
 const userProfile = asyncHandler(async (req, res) => {
   const userId = req.userId;
   if (!userId) {
-    throw new Error(401, "Unautherized User.");
+    throw new ApiError(401, "Unautherized User.");
   }
   const user = await profileModel
     .findById(userId)
@@ -81,7 +82,10 @@ const uploadDocumentInOrganization = asyncHandler(async (req, res) => {
     "GST",
     "KYC",
   ];
-
+  const organization = await organizationModel.findOne({ owner: userId });
+  if (!organization) {
+    throw new ApiError(400, "organization doex not exist.");
+  }
   const missingDocuments = requiredDocuments.filter(
     (doc) => !req.files?.[doc]?.[0]?.path
   );
@@ -108,40 +112,40 @@ const uploadDocumentInOrganization = asyncHandler(async (req, res) => {
         fileType: "PCB",
         fileName: "pcb",
         url: PCB.url,
-        profile: userId,
+        organization: organization?._id,
         fileSize: PCB.bytes,
       },
       {
         fileType: "GST",
         fileName: "gst",
         url: GST.url,
-        profile: userId,
+        organization: organization?._id,
         fileSize: GST.bytes,
       },
       {
         fileType: "Good and Service tax",
         fileName: "goodsAndServicesTax",
         url: GoodsAndServicesTax.url,
-        profile: userId,
+        organization: organization?._id,
         fileSize: GoodsAndServicesTax.bytes,
       },
       {
         fileType: "PAN card",
         fileName: "pan",
         url: PANCard.url,
-        profile: userId,
+        organization: organization?._id,
         fileSize: PANCard.bytes,
       },
       {
         fileType: "KYC",
         fileName: "kyc",
         url: KYC.url,
-        profile: userId,
+        organization: organization?._id,
         fileSize: KYC.bytes,
       },
     ];
 
-    await documentUploadModel.deleteMany({ profile: userId });
+    await documentUploadModel.deleteMany({ organization: organization?._id });
 
     const fileData = await documentUploadModel.insertMany(document);
 
@@ -159,30 +163,187 @@ const allScrapList = asyncHandler(async (req, res) => {
 });
 
 const selectScrapMaterial = asyncHandler(async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { classifications } = req.body;
-    if (!Array.isArray(classifications) || classifications.length === 0) {
-      throw new ApiError(
-        400,
-        "Material Classification must be a non-empty array."
-      );
-    }
-    await organizationModel.findOneAndUpdate(
-      { owner: userId },
-      {
-        $set: {
-          materialClassification: classifications,
-          organizationSetUp: true,
-        },
-      }
+  const userId = req.userId;
+  const { classifications } = req.body;
+  if (!Array.isArray(classifications) || classifications.length === 0) {
+    throw new ApiError(
+      400,
+      "Material Classification must be a non-empty array."
     );
-    return res
-      .status(200)
-      .json(new ApiResponse(200, "select scrap successfully."));
-  } catch (error) {
-    throw new Error(400, "failed to upload selected scrap");
   }
+  await organizationModel.findOneAndUpdate(
+    { owner: userId },
+    {
+      $set: {
+        materialClassification: classifications,
+        organizationSetUp: true,
+      },
+    }
+  );
+
+  await profileModel.findOneAndUpdate(
+    { _id: userId },
+    {
+      $set: {
+        accountSetUp: true,
+      },
+    }
+  );
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "select scrap successfully."));
+});
+
+const verifyAccountAndOrganization = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.userId;
+
+  const organization = await organizationModel.findOneAndUpdate(
+    { _id: id },
+    {
+      $set: {
+        accountVerify: "verified",
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  const profile = await profileModel.findOneAndUpdate(
+    { _id: userId },
+    {
+      $set: {
+        verifiedUser: "verified",
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  if (!organization) {
+    throw new ApiError(400, "organization does not found.");
+  }
+
+  if (!profile) {
+    throw new ApiError(400, "profile does not found.");
+  }
+
+  return res.status(200).json(new ApiResponse(200, organization));
+});
+
+const blockrdAccountAndOrganization = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.userId;
+
+  const organization = await organizationModel.findOneAndUpdate(
+    { _id: id },
+    {
+      $set: {
+        accountVerify: "blocked",
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  const profile = await profileModel.findOneAndUpdate(
+    { _id: userId },
+    {
+      $set: {
+        verifiedUser: "blocked",
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  if (!organization) {
+    throw new ApiError(400, "organization does not found.");
+  }
+
+  if (!profile) {
+    throw new ApiError(400, "profile does not found.");
+  }
+
+  return res.status(200).json(new ApiResponse(200, organization));
+});
+
+const iniviteNewSeller = asyncHandler(async (req, res) => {
+  const {
+    organizationName,
+    location,
+    GSTIN,
+    email,
+    name,
+    phoneNumber,
+    panCard,
+  } = req.body;
+  const requiredFields = [
+    "organizationName",
+    "location",
+    "GSTIN",
+    "email",
+    "name",
+    "phoneNumber",
+    "panCard",
+  ];
+  const missingFields = checkMissingFields(req.body, requiredFields);
+  if (missingFields.length > 0) {
+    throw new ApiError(
+      400,
+      `The following fields are missing or empty: ${missingFields.join(", ")}`
+    );
+  }
+
+  await addNewSeller({
+    name,
+    email,
+    phoneNumber,
+    password: "InviteNewSeller@123",
+  });
+
+  const profileExist = await profileModel.findOne({
+    $or: [{ email }, { phoneNumber }],
+  });
+
+  if (profileExist) {
+    throw new ApiError(400, "Seller account is already created.");
+  }
+
+  const profile = await profileModel.create(
+    {
+      email: user.email,
+      userName: user.name,
+      phoneNumber: user.phoneNumber,
+      accountType: "seller",
+      accountSetUp: true,
+    },
+    { new: true }
+  );
+  const organization = await organizationModel.create(
+    {
+      GSTIN,
+      accountType: "seller",
+      accountVerify: true,
+      location,
+      organizationId: generateId(organizationName),
+      organizationName,
+      organizationSetUp: true,
+      owner: profile?._id,
+      panCard: panCard,
+    },
+    {
+      new: true, // Return the updated document
+      upsert: true, // Create the document if it doesn't exist
+      setDefaultsOnInsert: true, // Apply default values if creating
+    }
+  );
+  return res.status(200).json(new ApiResponse(200, organization));
 });
 
 module.exports = {
@@ -192,4 +353,7 @@ module.exports = {
   uploadDocumentInOrganization,
   allScrapList,
   selectScrapMaterial,
+  verifyAccountAndOrganization,
+  blockrdAccountAndOrganization,
+  iniviteNewSeller,
 };

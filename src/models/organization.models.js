@@ -9,8 +9,9 @@ const orgnizationSchema = new mongoose.Schema(
       type: String,
     },
     accountVerify: {
-      type: Boolean,
-      default: false,
+      type: String,
+      enum: ["pending", "verified", "blocked"],
+      default: "pending",
     },
     organizationSetUp: {
       type: Boolean,
@@ -21,6 +22,9 @@ const orgnizationSchema = new mongoose.Schema(
       ref: "profileModel",
     },
     GSTIN: {
+      type: String,
+    },
+    panCard: {
       type: String,
     },
     location: {

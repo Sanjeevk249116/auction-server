@@ -11,14 +11,17 @@ const documentSchema = new mongoose.Schema(
     fileSize: {
       type: String,
     },
+    url: {
+      type: String,
+    },
     status: {
       type: String,
       enum: ["pending", "verified", "rejected"],
       default: "pending",
     },
-    profile: {
+    organization: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "profileModel",
+      ref: "organizationModel",
     },
   },
   { timestamps: true }
