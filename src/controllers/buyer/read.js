@@ -1,6 +1,7 @@
 const { auctionModel } = require("../../models/auction");
 const { documentUploadModel } = require("../../models/document");
 const { organizationModel } = require("../../models/organization.models");
+const { transactionModel } = require("../../models/transaction");
 const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
@@ -50,4 +51,35 @@ const readBuyerDocuments = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, document));
 });
 
-module.exports = { getAllAuctionAnylitics, readBuyerDocuments };
+
+const handleDateSetUp = (date) => {
+  return new Date(date).toISOString().split("T")[0];
+};
+
+const transactionChart = asyncHandler(async (req, res) => {
+  const debitsAmount = await transactionModel.aggregate([
+    {
+      $project: {
+        createdAt: 1,
+        amount: 1,
+      },
+    },
+  ]);
+
+  const amountDebited = debitsAmount.map((item) => ({
+    date: handleDateSetUp(item.createdAt),
+    totalAmount: item.amount,
+  }));
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { amountDebited: amountDebited, amountCredited: [] })
+    );
+});
+
+module.exports = {
+  getAllAuctionAnylitics,
+  readBuyerDocuments,
+  transactionChart,
+};

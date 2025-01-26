@@ -1,9 +1,13 @@
 const { documentUploadModel } = require("../../models/document");
+const { emdModel } = require("../../models/emdModel");
+const { offersModel } = require("../../models/offer");
 const { organizationModel } = require("../../models/organization.models");
+const { walletModel } = require("../../models/wallet.model");
 const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
 const { uploadOnCloudinary } = require("../../utils/cloudinary");
+const { transactionRecord } = require("../commonController/update");
 
 const uploadFiles = asyncHandler(async (req, res) => {
   const userId = req.userId;
@@ -32,6 +36,53 @@ const uploadFiles = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "Document uploaded successfully."));
 });
 
+const payEmdDeposit = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.userId;
+  const { offers } = req.body;
 
+  const amount = offers.reduce(
+    (total, item) => total + (parseInt(item.EMDAmount || 0, 10) + 100),
+    0
+  );
 
-module.exports = { uploadFiles };
+  const wallet = await walletModel.findOne({ profile: userId });
+  if (wallet.balance < amount) {
+    throw new ApiError(400, "Insufficient balance");
+  }
+
+  await walletModel.findOneAndUpdate(
+    { profile: userId },
+    { $inc: { balance: -amount } }
+  );
+
+  const emdOffers = offers.map((item) => ({
+    profile: userId,
+    offers: item.offer,
+    auction: id,
+    EMDAmount: item.EMDAmount,
+  }));
+
+  const emd = await emdModel.insertMany(emdOffers);
+  const updatedOffers = await Promise.all(
+    emd.map((item) =>
+      offersModel.findByIdAndUpdate(
+        item.offers,
+        {
+          $push: { depositedBy: item._id },
+        },
+        { new: true }
+      )
+    )
+  );
+  await transactionRecord(
+    userId,
+    amount,
+    "emd deposite",
+    "recent",
+    "completed"
+  );
+  return res.status(200).json(new ApiResponse(200, updatedOffers));
+});
+
+module.exports = { uploadFiles, payEmdDeposit };

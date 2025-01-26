@@ -81,6 +81,16 @@ const offerSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    depositedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "emdModel",
+      },
+    ],
+    deposited: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

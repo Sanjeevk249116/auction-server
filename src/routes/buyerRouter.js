@@ -18,8 +18,9 @@ const { buyerAuthenticate } = require("../middleware/buyerAuthenticate");
 const {
   getAllAuctionAnylitics,
   readBuyerDocuments,
+  transactionChart,
 } = require("../controllers/buyer/read");
-const { uploadFiles } = require("../controllers/buyer/create");
+const { uploadFiles, payEmdDeposit } = require("../controllers/buyer/create");
 const buyerRouters = express.Router();
 
 // secure routes
@@ -80,6 +81,18 @@ buyerRouters.put(
   buyerAuthenticate,
   upload.single("document"),
   uploadFiles
+);
+
+buyerRouters.get(
+  "/profile/read/transactions-analytics",
+  buyerAuthenticate,
+  transactionChart
+);
+
+buyerRouters.put(
+  "/auction/update/pay-deposit/:id",
+  buyerAuthenticate,
+  payEmdDeposit
 );
 
 module.exports = { buyerRouters };

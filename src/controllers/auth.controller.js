@@ -29,14 +29,11 @@ const auctionAuthenticate = asyncHandler(async (req, res) => {
   });
 
   if (!profile) {
-    profile = await profileModel.create(
-      {
-        email: user.email,
-        userName: user.name,
-        phoneNumber: user.phoneNumber,
-      },
-      { new: true }
-    );
+    profile = await profileModel.create({
+      email: user.email,
+      userName: user.name,
+      phoneNumber: user.phoneNumber,
+    });
   }
 
   const auctionToken = await generateToken(profile?._id);

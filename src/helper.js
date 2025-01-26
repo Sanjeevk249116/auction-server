@@ -22,4 +22,13 @@ const handleDynamicFields = (req, res, next) => {
   upload.fields(fields)(req, res, next);
 };
 
-module.exports = { addDateAndTime, handleDynamicFields };
+const handleDateSetUp = (dates) => {
+  if (!dates) return "";
+console.log(dates)
+  const date = dates.split("T")[0];
+  const [year, month, day] = date?.split("-");
+
+  return `${day}-${month}-${year}`;
+};
+
+module.exports = { addDateAndTime, handleDynamicFields, handleDateSetUp };

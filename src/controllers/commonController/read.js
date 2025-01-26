@@ -5,6 +5,7 @@ const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
 const { documentUploadModel } = require("../../models/document");
 const { walletModel } = require("../../models/wallet.model");
+const { transactionModel } = require("../../models/transaction");
 
 const readAllAuction = asyncHandler(async (req, res) => {
   try {
@@ -152,10 +153,7 @@ const singleSellerAuctionList = asyncHandler(async (req, res) => {
 
 const readSingleAuction = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const singleAuction = await auctionModel.findById(id);
-  if (!singleAuction) {
-    throw new ApiError(400, "Auction not found.");
-  }
+  const userId = req.userId;
 
   const auctionDetails = await auctionModel.aggregate([
     { $match: { _id: new mongoose.Types.ObjectId(id) } },
@@ -174,6 +172,35 @@ const readSingleAuction = asyncHandler(async (req, res) => {
               as: "offerImage",
             },
           },
+          {
+            $lookup: {
+              from: "emdmodels",
+              localField: "_id",
+              foreignField: "offers",
+              as: "emdDeposits",
+            },
+          },
+          {
+            $addFields: {
+              deposited: {
+                $anyElementTrue: [
+                  {
+                    $map: {
+                      input: "$emdDeposits",
+                      as: "deposit",
+                      in: {
+                        $eq: [
+                          "$$deposit.profile",
+                          new mongoose.Types.ObjectId(userId),
+                        ],
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+          { $project: { emdDeposits: 0 } },
         ],
       },
     },
@@ -220,6 +247,45 @@ const myWallet = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, wallet[0]));
 });
 
+const transactionHistory = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const transaction = await transactionModel.aggregate([
+    {
+      $match: {
+        profile: new mongoose.Types.ObjectId(userId),
+        types: "recent",
+      },
+    },
+  ]);
+  return res.status(200).json(new ApiResponse(200, transaction));
+});
+
+const withdrawAmount = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const transaction = await transactionModel.aggregate([
+    {
+      $match: {
+        profile: new mongoose.Types.ObjectId(userId),
+        types: "withdraw",
+      },
+    },
+  ]);
+  return res.status(200).json(new ApiResponse(200, transaction));
+});
+
+const refundAmount = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const transaction = await transactionModel.aggregate([
+    {
+      $match: {
+        profile: new mongoose.Types.ObjectId(userId),
+        types: "refund",
+      },
+    },
+  ]);
+  return res.status(200).json(new ApiResponse(200, transaction));
+});
+
 module.exports = {
   readAllAuction,
   readTodayAuction,
@@ -229,4 +295,7 @@ module.exports = {
   readSingleAuction,
   downloadSingleDocument,
   myWallet,
+  transactionHistory,
+  withdrawAmount,
+  refundAmount,
 };

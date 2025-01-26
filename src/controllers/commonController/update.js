@@ -1,4 +1,5 @@
 const { bankAccountModel } = require("../../models/bankAccount.model");
+const { transactionModel } = require("../../models/transaction");
 const { walletModel } = require("../../models/wallet.model");
 const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
@@ -54,4 +55,47 @@ const addBankAccount = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, updatedWallet));
 });
 
-module.exports = { addBankAccount };
+const createTransaction = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const { amount, category, types } = req.body;
+  const requiredFields = ["amount", "category", "types"];
+
+  const missingFields = checkMissingFields(req.body, requiredFields);
+  if (missingFields.length > 0) {
+    throw new ApiError(
+      400,
+      `The following fields are missing or empty: ${missingFields.join(", ")}`
+    );
+  }
+
+  const wallet = await walletModel.findOne({ profile: userId });
+  if (!wallet) {
+    throw new ApiError(400, "wallet not found.");
+  }
+  const transaction = await transactionModel.create({
+    amount,
+    category,
+    profile: userId,
+    wallet: wallet._id,
+    types,
+  });
+  return res.status(200).json(new ApiResponse(200, transaction));
+});
+
+const transactionRecord = async (userId, amount, category, types,status) => {
+  const wallet = await walletModel.findOne({ profile: userId });
+  if (!wallet) {
+    throw new ApiError(400, "wallet not found.");
+  }
+  await transactionModel.create({
+    amount,
+    category,
+    profile: userId,
+    wallet: wallet._id,
+    types,
+    status
+  });
+
+};
+
+module.exports = { addBankAccount, createTransaction, transactionRecord };

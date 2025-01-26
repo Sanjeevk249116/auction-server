@@ -178,7 +178,7 @@ const allScrapList = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, scrapList));
 });
 
-const selectScrapMaterial = asyncHandler(async (req, res) => {
+const selectScrapMaterial = asyncHandler(async (req, res) => {  
   const userId = req.userId;
   const { classifications } = req.body;
   if (!Array.isArray(classifications) || classifications.length === 0) {
@@ -316,7 +316,7 @@ const iniviteNewSeller = asyncHandler(async (req, res) => {
       `The following fields are missing or empty: ${missingFields.join(", ")}`
     );
   }
-
+  
   await addNewSeller({
     name,
     email,

@@ -8,9 +8,15 @@ const {
   readCompletedAuction,
   readSingleAuction,
   downloadSingleDocument,
+  transactionHistory,
+  withdrawAmount,
+  refundAmount,
 } = require("../controllers/commonController/read");
 const { myWallet } = require("../controllers/commonController/read");
-const { addBankAccount } = require("../controllers/commonController/update");
+const {
+  addBankAccount,
+  createTransaction,
+} = require("../controllers/commonController/update");
 const commanRouter = express.Router();
 
 commanRouter.get("/auction/read/all-events", validAuth, readAllAuction);
@@ -47,5 +53,25 @@ commanRouter.get(
 
 commanRouter.get("/wallet/read/my-wallet", validAuth, myWallet);
 commanRouter.put("/profile/update/add-bank-details", validAuth, addBankAccount);
+commanRouter.post(
+  "/wallet/create/my-wallet/transactions",
+  validAuth,
+  createTransaction
+);
+commanRouter.get(
+  "/wallet/read/my-wallet/transactions",
+  validAuth,
+  transactionHistory
+);
+commanRouter.get(
+  "/wallet/read/my-wallet/withdrawal",
+  validAuth,
+  withdrawAmount
+);
+commanRouter.get(
+  "/wallet/read/my-wallet/refund-history",
+  validAuth,
+  refundAmount
+);
 
 module.exports = { commanRouter };
