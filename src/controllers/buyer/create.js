@@ -6,6 +6,7 @@ const { walletModel } = require("../../models/wallet.model");
 const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
+const { checkMissingFields } = require("../../utils/checkFields");
 const { uploadOnCloudinary } = require("../../utils/cloudinary");
 const { transactionRecord } = require("../commonController/update");
 
@@ -85,4 +86,40 @@ const payEmdDeposit = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, updatedOffers));
 });
 
-module.exports = { uploadFiles, payEmdDeposit };
+const inspectionRequest = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const {
+    contactPerson,
+    inspectionBy,
+    inspectionDate,
+    inspectionLocation,
+    numberOfPeople,
+    offers,
+  } = req.body;
+
+  const requiredFields = [
+    "contactPerson",
+    "inspectionBy",
+    "inspectionDate",
+    "inspectionDate",
+    "inspectionLocation",
+    "numberOfPeople",
+    "offers",
+  ];
+
+  if (offers.length <= 0) {
+    throw new ApiError(400, "please the lot for inspection.");
+  }
+
+  const missingFields = checkMissingFields(req.body, requiredFields);
+  if (missingFields.length > 0) {
+    throw new ApiError(400, `missing field is ${missingFields.join(", ")}`);
+  }
+  const auction = await auctionModel.findById(id);
+  if (!auction) {
+    throw new ApiError(400, "Auction not found.");
+  }
+  
+});
+
+module.exports = { uploadFiles, payEmdDeposit, inspectionRequest };

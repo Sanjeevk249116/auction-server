@@ -20,7 +20,11 @@ const {
   readBuyerDocuments,
   transactionChart,
 } = require("../controllers/buyer/read");
-const { uploadFiles, payEmdDeposit } = require("../controllers/buyer/create");
+const {
+  uploadFiles,
+  payEmdDeposit,
+  inspectionRequest,
+} = require("../controllers/buyer/create");
 const buyerRouters = express.Router();
 
 // secure routes
@@ -93,6 +97,12 @@ buyerRouters.put(
   "/auction/update/pay-deposit/:id",
   buyerAuthenticate,
   payEmdDeposit
+);
+
+buyerRouters.post(
+  "/create/inspection-request/:id",
+  buyerAuthenticate,
+  inspectionRequest
 );
 
 module.exports = { buyerRouters };
