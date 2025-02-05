@@ -2,7 +2,6 @@ const express = require("express");
 const { authenticateUser } = require("../middleware/auth.middleware");
 const {
   auctionAuthenticate,
-  profileLogout,
 } = require("../controllers/auth.controller");
 const { validAuth } = require("../middleware/auction.middleware");
 const {
@@ -12,6 +11,7 @@ const {
   uploadDocumentInOrganization,
   allScrapList,
   selectScrapMaterial,
+  enterGstNumber,
 } = require("../controllers/profile");
 const { upload } = require("../middleware/multer.middleware");
 const { buyerAuthenticate } = require("../middleware/buyerAuthenticate");
@@ -28,13 +28,13 @@ const {
 const buyerRouters = express.Router();
 
 // secure routes
-buyerRouters.post("/user/authenticate", authenticateUser, auctionAuthenticate);
-buyerRouters.put("/user/logout", validAuth, profileLogout);
-buyerRouters.get("/user/profile", validAuth, userProfile);
-buyerRouters.put("/update/organization", validAuth, craeteOrganization);
-buyerRouters.get("/read/organization", validAuth, userOrganization);
+buyerRouters.post("/authenticate", authenticateUser, auctionAuthenticate);
+buyerRouters.post("/authenticate/verify-gstin/:GSTIN", validAuth, enterGstNumber);
+buyerRouters.get("/profile/read", validAuth, userProfile);
+buyerRouters.put("/profile/update/organization-name", validAuth, craeteOrganization);
+buyerRouters.get("/profile/read/organization", validAuth, userOrganization);
 buyerRouters.put(
-  "/upload/multi-documents",
+  "/profile/update/multi-documents",
   validAuth,
   upload.fields([
     {
@@ -60,6 +60,7 @@ buyerRouters.put(
   ]),
   uploadDocumentInOrganization
 );
+
 buyerRouters.get("/material-classification/read", validAuth, allScrapList);
 buyerRouters.put(
   "/organization/update/add-classification",
@@ -76,7 +77,6 @@ buyerRouters.get(
 buyerRouters.get(
   "/profile/read/all-documnets",
   buyerAuthenticate,
-
   readBuyerDocuments
 );
 

@@ -3,7 +3,7 @@ const { asyncHandler } = require("../utils/asyncHandler");
 const jwt = require("jsonwebtoken");
 
 const authenticateUser = asyncHandler(async (req, res, next) => {
-  const token = req.header("auth-token");
+  const token = req.header("auth-Token");
   if (!token) {
     throw new ApiError(401, "Access denied!");
   }
@@ -19,6 +19,7 @@ const authenticateUser = asyncHandler(async (req, res, next) => {
     req.userId = decodedUserToken?._id;
     next();
   } catch (error) {
+    console.log(error)
     if (error.name === "TokenExpiredError") {
       throw new ApiError(401, "Token expired. Please refresh your token.");
     } else {

@@ -1,9 +1,5 @@
-class ApiResponse {
-    constructor(statusCode, data, message = "success") {
-      this.statusCode = statusCode;
-      this.data = data;
-      this.message = message;
-    }
-  }
-  
-  module.exports = { ApiResponse };
+function ApiResponse(statusCode, data, message = "Success") {
+  return data;
+}
+
+module.exports = { ApiResponse };

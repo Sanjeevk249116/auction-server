@@ -3,11 +3,12 @@ const { ApiError } = require("../utils/apiError");
 require("dotenv").config();
 
 const getUserFromAuthService = async (userId) => {
+  console.log(userId)
   try {
     const response = await axios.get(
-      `${process.env.SERVER_URL}/user/profile/${userId}`
+      `${process.env.SERVER_URL}/profile/${userId}`
     );
-    return response?.data?.data;
+    return response?.data;
   } catch (error) {
     throw new ApiError(400, "Unable to fetch user data");
   }

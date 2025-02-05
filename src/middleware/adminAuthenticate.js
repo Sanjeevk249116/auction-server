@@ -4,7 +4,7 @@ const { ApiError } = require("../utils/apiError");
 require("dotenv").config();
 
 const adminAuthenticate = asyncHandler(async (req, res, next) => {
-  const token = req.header("auth-token");
+  const token = req.header("auth-Token");
 
   if (!token) {
     throw new ApiError(401, "Access denied!");

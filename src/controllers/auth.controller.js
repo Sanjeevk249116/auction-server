@@ -23,7 +23,6 @@ const generateToken = async (userId) => {
 const auctionAuthenticate = asyncHandler(async (req, res) => {
   const user = await getUserFromAuthService(req.userId);
   let profile = {};
-
   profile = await profileModel.findOne({
     $or: [{ email: user.email }, { phoneNumber: user.phoneNumber }],
   });

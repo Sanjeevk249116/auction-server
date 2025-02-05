@@ -27,6 +27,18 @@ const userProfile = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, user));
 });
 
+const enterGstNumber = asyncHandler(async (req, res) => {
+  const { GSTIN } = req.params;
+  const gstNumber = await organizationModel.findOne({ GSTIN });
+  if (gstNumber) {
+    throw new ApiError(400, "Gst number is already register.");
+  }
+  const gst = await organizationModel.create({
+    GSTIN,
+  });
+  return res.status(200).json(new ApiResponse(200, gst));
+});
+
 const craeteOrganization = asyncHandler(async (req, res) => {
   const userId = req.userId;
   const { location, organizationName, GSTIN, panCard } = req.body;
@@ -178,7 +190,7 @@ const allScrapList = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, scrapList));
 });
 
-const selectScrapMaterial = asyncHandler(async (req, res) => {  
+const selectScrapMaterial = asyncHandler(async (req, res) => {
   const userId = req.userId;
   const { classifications } = req.body;
   if (!Array.isArray(classifications) || classifications.length === 0) {
@@ -316,7 +328,7 @@ const iniviteNewSeller = asyncHandler(async (req, res) => {
       `The following fields are missing or empty: ${missingFields.join(", ")}`
     );
   }
-  
+
   await addNewSeller({
     name,
     email,
@@ -373,4 +385,5 @@ module.exports = {
   verifyAccountAndOrganization,
   blockrdAccountAndOrganization,
   iniviteNewSeller,
+  enterGstNumber
 };

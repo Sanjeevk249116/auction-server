@@ -17,16 +17,18 @@ const {
   addBankAccount,
   createTransaction,
 } = require("../controllers/commonController/update");
+const { profileLogout } = require("../controllers/auth.controller");
 const commanRouter = express.Router();
 
 commanRouter.get("/auction/read/all-events", validAuth, readAllAuction);
-
+commanRouter.put("/authenticate/logout", validAuth, profileLogout);
 commanRouter.get("/auction/read/today-auctions", validAuth, readTodayAuction);
 commanRouter.get(
   "/auction/read/upcoming-auctions",
   validAuth,
   readUpcommingAuction
 );
+
 commanRouter.get(
   "/auction/read/completed-auctions",
   validAuth,

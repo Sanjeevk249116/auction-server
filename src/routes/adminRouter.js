@@ -30,10 +30,10 @@ const {
 
 const adminRouter = express.Router();
 
-adminRouter.get("/read/seller-list", adminAuthenticate, readAllSeller);
-adminRouter.get("/read/buyer-list", adminAuthenticate, readAllBuyer);
+adminRouter.get("/profile/read/all-sellers", adminAuthenticate, readAllSeller);
+adminRouter.get("/profile/read/all-traders", adminAuthenticate, readAllBuyer);
 adminRouter.get(
-  "/read/single-account/:id",
+  "/profile/read/single-account/:id",
   adminAuthenticate,
   readSingleAccount
 );
