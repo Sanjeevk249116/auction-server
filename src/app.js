@@ -22,6 +22,6 @@ app.use("/", buyerRouters);
 app.use("/", commanRouter);
 
 app.use((req, res) => {
- const apiError = new ApiError(400, "The requested url is not found.");
+  throw new ApiError(400, "The requested url is not found.");
 });
 module.exports = { app };

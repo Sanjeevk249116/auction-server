@@ -5,6 +5,7 @@ const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
 const { coordinatorModel } = require("../../models/coordinator");
 const { documentUploadModel } = require("../../models/document");
+const { auctionModel } = require("../../models/auction");
 
 const readAllSeller = asyncHandler(async (req, res) => {
   try {
@@ -125,7 +126,42 @@ const readAllDocuments = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, document));
 });
 
+const auctionAnalystics = asyncHandler(async (req, res) => {
+  const today = new Date();
+  const now = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
 
+  const numberOfIndustry = await organizationModel.find({
+    accountType: "seller",
+  });
+  const numberOfTraders = await organizationModel.find({
+    accountType: "buyer",
+  });
+
+  const todayAuctions = await auctionModel.find({
+    "auctionSchedule.startDate": { $gte: today, $lt: tomorrow },
+  });
+
+  const upcomingAuctions = await auctionModel.find({
+    "auctionSchedule.startDate": { $gte: now },
+  });
+
+  const completedAuctions = await auctionModel.find({
+    "auctionSchedule.startDate": { $lt: today },
+  });
+
+  const analytics = {
+    numberOfIndustry: numberOfIndustry.length,
+    numberOfTraders: numberOfTraders?.length,
+    todayAuctions: todayAuctions.length,
+    upcomingAuctions: upcomingAuctions.length,
+    completedAuctions:completedAuctions.length
+  };
+
+  return res.status(200).json(new ApiResponse(200, analytics));
+});
 
 module.exports = {
   readAllSeller,
@@ -134,5 +170,5 @@ module.exports = {
   readCoordinator,
   readClassificationMaterial,
   readAllDocuments,
-
+  auctionAnalystics,
 };

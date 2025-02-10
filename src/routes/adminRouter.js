@@ -6,6 +6,7 @@ const {
   readAllBuyer,
   readCoordinator,
   readAllDocuments,
+  auctionAnalystics,
 } = require("../controllers/admin/read");
 const { adminAuthenticate } = require("../middleware/adminAuthenticate");
 const {
@@ -125,6 +126,12 @@ adminRouter.post(
   "/authenticate/invte-industry",
   adminAuthenticate,
   iniviteNewSeller
+);
+
+adminRouter.get(
+  "/profile/read/admin-analytics",
+  adminAuthenticate,
+  auctionAnalystics
 );
 
 module.exports = { adminRouter };
