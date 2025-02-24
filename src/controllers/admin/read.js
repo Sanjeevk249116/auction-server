@@ -6,6 +6,8 @@ const { asyncHandler } = require("../../utils/asyncHandler");
 const { coordinatorModel } = require("../../models/coordinator");
 const { documentUploadModel } = require("../../models/document");
 const { auctionModel } = require("../../models/auction");
+const { walletModel } = require("../../models/wallet.model");
+const { catalogueModel } = require("../../models/catalogueModel");
 
 const readAllSeller = asyncHandler(async (req, res) => {
   try {
@@ -113,6 +115,29 @@ const readCoordinator = asyncHandler(async (req, res) => {
   }
 });
 
+const singleSellerAuctionList = asyncHandler(async (req, res) => {
+  try {
+    const auctionType = req.query.auctionType;
+    const { id } = req.params;
+    const status = req.query.filter;
+    const skip = parseInt(req.query.skip) || 0;
+    const limit = parseInt(req.query.limit) || 30;
+    const filter = { sellerId: id };
+    if (auctionType) {
+      filter.auctionType = auctionType;
+    }
+    if (status) {
+      filter.status = status;
+    }
+
+    const auction = await auctionModel.find(filter).skip(skip).limit(limit);
+    return res.status(200).json(new ApiResponse(200, auction));
+  } catch (error) {
+    console.log(error);
+    throw new ApiError(400, "cannot find auction for this seller.");
+  }
+});
+
 const readClassificationMaterial = asyncHandler(async (req, res) => {
   const scrapList = await materialClassificationModel.find();
   return res.status(200).json(new ApiResponse(200, scrapList));
@@ -157,10 +182,71 @@ const auctionAnalystics = asyncHandler(async (req, res) => {
     numberOfTraders: numberOfTraders?.length,
     todayAuctions: todayAuctions.length,
     upcomingAuctions: upcomingAuctions.length,
-    completedAuctions:completedAuctions.length
+    completedAuctions: completedAuctions.length,
   };
 
   return res.status(200).json(new ApiResponse(200, analytics));
+});
+
+const singleOrganizationWallet = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const organization = await organizationModel.findById(id);
+  if (!organization) {
+    throw new ApiError(400, "organization not found.");
+  }
+  const wallet = await walletModel.aggregate([
+    {
+      $match: {
+        profile: new mongoose.Types.ObjectId(organization?.owner),
+      },
+    },
+    {
+      $lookup: {
+        from: "bankaccountmodels",
+        localField: "bankAccounts",
+        foreignField: "_id",
+        as: "bankAccounts",
+      },
+    },
+  ]);
+
+  return res.status(200).json(new ApiResponse(200, wallet[0]));
+});
+
+const singleAuctionCatalogueDetails = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const auctionDetails = await auctionModel.aggregate([
+    { $match: { _id: new mongoose.Types.ObjectId(id) } },
+    {
+      $lookup: {
+        from: "offersmodels",
+        localField: "offers",
+        foreignField: "_id",
+        as: "offers",
+        pipeline: [
+          {
+            $lookup: {
+              from: "scrapimagemodels",
+              localField: "offerImage",
+              foreignField: "_id",
+              as: "offerImage",
+            },
+          },
+          {
+            $lookup: {
+              from: "emdmodels",
+              localField: "_id",
+              foreignField: "offers",
+              as: "emdDeposits",
+            },
+          },
+          { $project: { emdDeposits: 0 } },
+        ],
+      },
+    },
+  ]);
+
+  return res.status(200).json(new ApiResponse(200, auctionDetails[0]));
 });
 
 module.exports = {
@@ -171,4 +257,8 @@ module.exports = {
   readClassificationMaterial,
   readAllDocuments,
   auctionAnalystics,
+  singleSellerAuctionList,
+  singleOrganizationWallet,
+  singleAuctionCatalogueDetails,
+
 };

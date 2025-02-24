@@ -1,5 +1,9 @@
+const { auctionModel } = require("../../models/auction");
 const { documentUploadModel } = require("../../models/document");
 const { emdModel } = require("../../models/emdModel");
+const {
+  inspectionRequestModel,
+} = require("../../models/inspectionRequestModel");
 const { offersModel } = require("../../models/offer");
 const { organizationModel } = require("../../models/organization.models");
 const { walletModel } = require("../../models/wallet.model");
@@ -52,11 +56,6 @@ const payEmdDeposit = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Insufficient balance");
   }
 
-  await walletModel.findOneAndUpdate(
-    { profile: userId },
-    { $inc: { balance: -amount } }
-  );
-
   const emdOffers = offers.map((item) => ({
     profile: userId,
     offers: item.offer,
@@ -76,6 +75,12 @@ const payEmdDeposit = asyncHandler(async (req, res) => {
       )
     )
   );
+
+  await walletModel.findOneAndUpdate(
+    { profile: userId },
+    { $inc: { balance: -amount } }
+  );
+
   await transactionRecord(
     userId,
     amount,
@@ -88,6 +93,7 @@ const payEmdDeposit = asyncHandler(async (req, res) => {
 
 const inspectionRequest = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const userId = req.userId;
   const {
     contactPerson,
     inspectionBy,
@@ -108,7 +114,7 @@ const inspectionRequest = asyncHandler(async (req, res) => {
   ];
 
   if (offers.length <= 0) {
-    throw new ApiError(400, "please the lot for inspection.");
+    throw new ApiError(400, "please select the lot for inspection.");
   }
 
   const missingFields = checkMissingFields(req.body, requiredFields);
@@ -119,7 +125,23 @@ const inspectionRequest = asyncHandler(async (req, res) => {
   if (!auction) {
     throw new ApiError(400, "Auction not found.");
   }
-  
+  const request = await inspectionRequestModel.create({
+    contactPerson,
+    inspectionBy,
+    inspectionDate,
+    inspectionLocation,
+    numberOfPeople,
+    offers,
+    auctionId: id,
+    profile: userId,
+  });
+  const inspectionAuction = await auctionModel.updateOne(
+    { _id: id },
+    {
+      $push: { inspectionRequest: request._id },
+    }
+  );
+  return res.status(200).json(new ApiResponse(200, inspectionAuction));
 });
 
 module.exports = { uploadFiles, payEmdDeposit, inspectionRequest };

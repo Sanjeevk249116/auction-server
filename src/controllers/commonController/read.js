@@ -6,6 +6,8 @@ const { asyncHandler } = require("../../utils/asyncHandler");
 const { documentUploadModel } = require("../../models/document");
 const { walletModel } = require("../../models/wallet.model");
 const { transactionModel } = require("../../models/transaction");
+const { offersModel } = require("../../models/offer");
+const { catalogueModel } = require("../../models/catalogueModel");
 
 const readAllAuction = asyncHandler(async (req, res) => {
   try {
@@ -15,16 +17,35 @@ const readAllAuction = asyncHandler(async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const filter = {
-      "auctionSchedule.startDate": {
-        $gte: today,
-      },
+    const matchStage = {
+      "auctionSchedule.startDate": { $gte: today },
     };
 
     if (auctionType) {
-      filter.auctionType = auctionType;
+      matchStage.auctionType = auctionType;
     }
-    const auctions = await auctionModel.find(filter).skip(skip).limit(limit);
+
+    const auctions = await auctionModel.aggregate([
+      { $match: matchStage },
+      { $sort: { "auctionSchedule.startDate": 1 } },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: "cataloguemodels",
+          localField: "catalogue",
+          foreignField: "_id",
+          as: "catalogue",
+        },
+      },
+      {
+        $unwind: {
+          path: "$catalogue",
+          preserveNullAndEmptyArrays: true, // Keeps the auction even if catalogue is missing
+        },
+      },
+    ]);
+
     return res.status(200).json(new ApiResponse(200, auctions));
   } catch (error) {
     throw new ApiError(400, "Failed to fetch auction list.");
@@ -62,7 +83,27 @@ const readTodayAuction = asyncHandler(async (req, res) => {
     if (auctionType) {
       filter.auctionType = auctionType;
     }
-    const auctions = await auctionModel.find(filter).skip(skip).limit(limit);
+    const auctions = await auctionModel.aggregate([
+      { $match: filter },
+      { $sort: { "auctionSchedule.startDate": 1 } },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: "cataloguemodels",
+          localField: "catalogue",
+          foreignField: "_id",
+          as: "catalogue",
+        },
+      },
+      {
+        $unwind: {
+          path: "$catalogue",
+          preserveNullAndEmptyArrays: true, // Keeps the auction even if catalogue is missing
+        },
+      },
+    ]);
+    // const auctions = await auctionModel.find(filter).skip(skip).limit(limit);
     return res.status(200).json(new ApiResponse(200, auctions));
   } catch (error) {
     throw new ApiError(400, "Failed to fetch auction today.");
@@ -92,7 +133,27 @@ const readUpcommingAuction = asyncHandler(async (req, res) => {
     if (auctionType) {
       filter.auctionType = auctionType;
     }
-    const auctions = await auctionModel.find(filter).skip(skip).limit(limit);
+    const auctions = await auctionModel.aggregate([
+      { $match: filter },
+      { $sort: { "auctionSchedule.startDate": 1 } },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: "cataloguemodels",
+          localField: "catalogue",
+          foreignField: "_id",
+          as: "catalogue",
+        },
+      },
+      {
+        $unwind: {
+          path: "$catalogue",
+          preserveNullAndEmptyArrays: true, // Keeps the auction even if catalogue is missing
+        },
+      },
+    ]);
+
     return res.status(200).json(new ApiResponse(200, auctions));
   } catch (error) {
     console.log(error);
@@ -115,6 +176,7 @@ const readCompletedAuction = asyncHandler(async (req, res) => {
         "auctionSchedule.startDate": { $lt: today },
         status: { $ne: "completed" },
       },
+      { $sort: { "auctionSchedule.startDate": 1 } },
       { $set: { status: "completed" } }
     );
 
@@ -125,29 +187,6 @@ const readCompletedAuction = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, auctions));
   } catch (error) {
     throw new ApiError(400, "Failed to fetch auction completed.");
-  }
-});
-
-const singleSellerAuctionList = asyncHandler(async (req, res) => {
-  try {
-    const auctionType = req.query.auctionType;
-    const { id } = req.params;
-    const status = req.query.status;
-    const skip = parseInt(req.query.skip) || 0;
-    const limit = parseInt(req.query.limit) || 30;
-    const filter = { sellerId: id };
-    if (auctionType) {
-      filter.auctionType = auctionType;
-    }
-    if (status) {
-      filter.status = status;
-    }
-
-    const auction = await auctionModel.find(filter).skip(skip).limit(limit);
-    return res.status(200).json(new ApiResponse(200, auction));
-  } catch (error) {
-    console.log(error);
-    throw new ApiError(400, "cannot find auction for this seller.");
   }
 });
 
@@ -202,6 +241,41 @@ const readSingleAuction = asyncHandler(async (req, res) => {
           },
           { $project: { emdDeposits: 0 } },
         ],
+      },
+    },
+    {
+      $lookup: {
+        from: "cataloguemodels",
+        localField: "catalogue",
+        foreignField: "_id",
+        as: "catalogue",
+      },
+    },
+    {
+      $unwind: {
+        path: "$catalogue",
+        preserveNullAndEmptyArrays: true, // Keeps the auction even if catalogue is missing
+      },
+    },
+    {
+      $lookup: {
+        from: "inspectionrequestmodels",
+        localField: "inspectionRequest",
+        foreignField: "_id",
+        as: "inspectionRequest",
+        pipeline: [
+          {
+            $match: {
+              profile: new mongoose.Types.ObjectId(userId),
+            },
+          },
+        ],
+      },
+    },
+    {
+      $unwind: {
+        path: "$inspectionRequest",
+        preserveNullAndEmptyArrays: true, 
       },
     },
   ]);
@@ -286,16 +360,125 @@ const refundAmount = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, transaction));
 });
 
+const singleOffers = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const offer = await offersModel.findById(id);
+  if (!offer) {
+    throw new ApiError(400, "Offer not found.");
+  }
+  return res.status(200).json(new ApiResponse(200, offer));
+});
+
+const auctionCatalogue = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const catalogue = await catalogueModel.aggregate([
+    {
+      $match: {
+        auction: new mongoose.Types.ObjectId(id),
+      },
+    },
+    {
+      $lookup: {
+        from: "catalogueactivities",
+        localField: "activityId",
+        foreignField: "_id",
+        as: "activityId",
+      },
+    },
+    {
+      $addFields: {
+        downloadedBy: {
+          $filter: {
+            input: "$activityId",
+            as: "activity",
+            cond: { $eq: ["$$activity.activityType", "downloadedBy"] },
+          },
+        },
+        viewedBy: {
+          $filter: {
+            input: "$activityId",
+            as: "activity",
+            cond: { $eq: ["$$activity.activityType", "viewedBy"] },
+          },
+        },
+        tradersRejected: {
+          $filter: {
+            input: "$activityId",
+            as: "activity",
+            cond: { $eq: ["$$activity.activityType", "tradersRejected"] },
+          },
+        },
+        tradersConfirmed: {
+          $filter: {
+            input: "$activityId",
+            as: "activity",
+            cond: { $eq: ["$$activity.activityType", "tradersConfirmed"] },
+          },
+        },
+        commands: {
+          $filter: {
+            input: "$activityId",
+            as: "activity",
+            cond: { $eq: ["$$activity.activityType", "commands"] },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        activityId: 0,
+        auction: 0,
+      },
+    },
+  ]);
+  return res.status(200).json(new ApiResponse(200, catalogue[0]));
+});
+
+const getAllAuctionAnylitics = asyncHandler(async (req, res) => {
+  const now = new Date();
+  await auctionModel.updateMany(
+    {
+      "auctionSchedule.startDate": { $gt: now },
+      status: { $ne: "upcomming" },
+    },
+    { $set: { status: "upcomming" } },
+    { new: true }
+  );
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  await auctionModel.updateMany(
+    {
+      "auctionSchedule.startDate": { $lt: today },
+      status: { $ne: "completed" },
+    },
+    { $set: { status: "completed" } }
+  );
+
+  const upcomingAuctions = await auctionModel.find({ status: "upcomming" });
+  const completedAuctions = await auctionModel.find({ status: "completed" });
+  const analytics = {
+    upcomingAuctions: upcomingAuctions.length,
+    completedAuctions: completedAuctions.length,
+    wonAuctions: 0,
+    depositedOffers: 0,
+  };
+
+  return res.status(200).json(new ApiResponse(200, analytics));
+});
+
 module.exports = {
   readAllAuction,
   readTodayAuction,
   readUpcommingAuction,
   readCompletedAuction,
-  singleSellerAuctionList,
   readSingleAuction,
   downloadSingleDocument,
   myWallet,
   transactionHistory,
   withdrawAmount,
   refundAmount,
+  singleOffers,
+  auctionCatalogue,
+  getAllAuctionAnylitics
 };

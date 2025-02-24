@@ -1,43 +1,15 @@
+const { default: mongoose } = require("mongoose");
 const { auctionModel } = require("../../models/auction");
 const { documentUploadModel } = require("../../models/document");
+const {
+  inspectionRequestModel,
+} = require("../../models/inspectionRequestModel");
 const { organizationModel } = require("../../models/organization.models");
 const { transactionModel } = require("../../models/transaction");
 const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
 
-const getAllAuctionAnylitics = asyncHandler(async (req, res) => {
-  const now = new Date();
-  await auctionModel.updateMany(
-    {
-      "auctionSchedule.startDate": { $gt: now },
-      status: { $ne: "upcomming" },
-    },
-    { $set: { status: "upcomming" } },
-    { new: true }
-  );
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  await auctionModel.updateMany(
-    {
-      "auctionSchedule.startDate": { $lt: today },
-      status: { $ne: "completed" },
-    },
-    { $set: { status: "completed" } }
-  );
-
-  const upcomingAuctions = await auctionModel.find({ status: "upcomming" });
-  const completedAuctions = await auctionModel.find({ status: "completed" });
-  const analytics = {
-    upcomingAuctions: upcomingAuctions.length,
-    completedAuctions: completedAuctions.length,
-    wonAuctions: 0,
-    depositedOffers: 0,
-  };
-
-  return res.status(200).json(new ApiResponse(200, analytics));
-});
 
 const readBuyerDocuments = asyncHandler(async (req, res) => {
   const userId = req.userId;
@@ -77,8 +49,35 @@ const transactionChart = asyncHandler(async (req, res) => {
     );
 });
 
+const readInspectionRequest = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const inspectionRequest = await inspectionRequestModel.aggregate([
+    {
+      $match: { profile: new mongoose.Types.ObjectId(userId) },
+    },
+    {
+      $lookup: {
+        from: "auctionmodels",
+        foreignField: "_id",
+        localField: "auctionId",
+        as: "auction",
+      },
+    },
+    {
+      $unwind: {
+        path: "$auction",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $project: { auctionId: 0 },
+    },
+  ]);
+  return res.status(200).json(new ApiResponse(200, inspectionRequest));
+});
+
 module.exports = {
-  getAllAuctionAnylitics,
   readBuyerDocuments,
   transactionChart,
+  readInspectionRequest,
 };

@@ -3,7 +3,6 @@ const { validAuth } = require("../middleware/auction.middleware");
 const {
   readTodayAuction,
   readUpcommingAuction,
-  singleSellerAuctionList,
   readAllAuction,
   readCompletedAuction,
   readSingleAuction,
@@ -11,6 +10,9 @@ const {
   transactionHistory,
   withdrawAmount,
   refundAmount,
+  singleOffers,
+  auctionCatalogue,
+  getAllAuctionAnylitics,
 } = require("../controllers/commonController/read");
 const { myWallet } = require("../controllers/commonController/read");
 const {
@@ -34,13 +36,12 @@ commanRouter.get(
   validAuth,
   readCompletedAuction
 );
-commanRouter.get(
-  "/auction/read/single-seller-auctions/:id",
-  validAuth,
-  singleSellerAuctionList
-);
 
-commanRouter.get("/read/single-auction/:id", validAuth, readSingleAuction);
+commanRouter.get(
+  "/auction/read/single-auction/:id",
+  validAuth,
+  readSingleAuction
+);
 commanRouter.get("/auction/read/all-public-auctions", readAllAuction);
 commanRouter.get("/auction/read/today-public-auctions", readTodayAuction);
 commanRouter.get(
@@ -52,7 +53,7 @@ commanRouter.get(
   validAuth,
   downloadSingleDocument
 );
-
+commanRouter.get("/profile/read/analytics", validAuth, getAllAuctionAnylitics);
 commanRouter.get("/wallet/read/my-wallet", validAuth, myWallet);
 commanRouter.put("/profile/update/add-bank-details", validAuth, addBankAccount);
 commanRouter.post(
@@ -74,6 +75,17 @@ commanRouter.get(
   "/wallet/read/my-wallet/refund-history",
   validAuth,
   refundAmount
+);
+commanRouter.get(
+  "/auction/read/admin/single-offer/:id",
+  validAuth,
+  singleOffers
+);
+
+commanRouter.get(
+  "/catalogue/read/all-catalogues/:id",
+  validAuth,
+  auctionCatalogue
 );
 
 module.exports = { commanRouter };

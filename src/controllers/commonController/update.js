@@ -1,3 +1,4 @@
+const { auctionModel } = require("../../models/auction");
 const { bankAccountModel } = require("../../models/bankAccount.model");
 const { transactionModel } = require("../../models/transaction");
 const { walletModel } = require("../../models/wallet.model");
@@ -82,7 +83,7 @@ const createTransaction = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, transaction));
 });
 
-const transactionRecord = async (userId, amount, category, types,status) => {
+const transactionRecord = async (userId, amount, category, types, status) => {
   const wallet = await walletModel.findOne({ profile: userId });
   if (!wallet) {
     throw new ApiError(400, "wallet not found.");
@@ -93,9 +94,37 @@ const transactionRecord = async (userId, amount, category, types,status) => {
     profile: userId,
     wallet: wallet._id,
     types,
-    status
+    status,
   });
-
 };
 
-module.exports = { addBankAccount, createTransaction, transactionRecord };
+const startingPriceApproval = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.userId;
+  const auction = await auctionModel.findById(id);
+
+  if (!auction) {
+    throw new ApiError(404, "Auction not found.");
+  }
+
+  try {
+    const auctionApproval = await auctionModel.updateOne(
+      { _id: id },
+      {
+        "startingPriceApproval.status": "approval",
+        "startingPriceApproval.profile": userId,
+      },
+      { new: true }
+    );
+    return res.status(200).json(new ApiResponse(200, auctionApproval));
+  } catch (error) {
+    throw new ApiError(400, "failed to updated starting price approval.");
+  }
+});
+
+module.exports = {
+  addBankAccount,
+  createTransaction,
+  transactionRecord,
+  startingPriceApproval,
+};

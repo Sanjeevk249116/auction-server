@@ -99,7 +99,7 @@ offerSchema.pre("validate", async function (next) {
   try {
     if (this.isNew) {
       const highestOffer = await this.constructor
-        .findOne()
+        .findOne({ auctionId: this.auctionId })
         .sort({ offerNumber: -1 });
       this.offerNumber = highestOffer ? highestOffer.offerNumber + 1 : 1;
     }

@@ -78,6 +78,17 @@ const auctionSchema = new mongoose.Schema(
         type: String,
       },
     },
+    startingPriceApproval: {
+      status: {
+        type: String,
+        enum: ["approval", "rejected", "pending"],
+        default: "pending",
+      },
+      profile: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "profileModel",
+      },
+    },
     auctionType: {
       type: String,
       enum: {
@@ -151,6 +162,9 @@ const auctionSchema = new mongoose.Schema(
       enum: ["live", "today", "upcomming", "completed"],
       default: "upcomming",
     },
+    inspectionRequest: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "inspectionRequestModel" },
+    ],
   },
   { timestamps: true }
 );

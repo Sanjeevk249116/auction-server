@@ -1,8 +1,13 @@
+const { default: mongoose } = require("mongoose");
+const { auctionModel } = require("../../models/auction");
+const { catalogueActivity } = require("../../models/catalogueActivity");
+const { catalogueModel } = require("../../models/catalogueModel");
 const { coordinatorModel } = require("../../models/coordinator");
 const { documentUploadModel } = require("../../models/document");
 const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
+const { offersModel } = require("../../models/offer");
 
 const createCoordinator = asyncHandler(async (req, res) => {
   try {
@@ -96,6 +101,7 @@ const verifyDocument = asyncHandler(async (req, res) => {
     throw new ApiError(400, "failed to verify document.");
   }
 });
+
 const rejectDocument = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
@@ -116,4 +122,89 @@ const rejectDocument = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { createCoordinator, updateCoordinator, verifyDocument,rejectDocument };
+const approvedCatalogue = asyncHandler(async (req, res) => {
+  const { auctionId, id } = req.params;
+  const userId = req.userId;
+  const auction = await auctionModel.findById(auctionId);
+  if (!auction) {
+    throw new ApiError(404, "Auction not found");
+  }
+  const catalogue = await catalogueModel.findByIdAndUpdate(
+    id,
+    {
+      $set: {
+        "industryApproval.status": "approval",
+        "industryApproval.approvalId": userId,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+  return res.status(200).json(new ApiResponse(200, catalogue));
+});
+
+const notApprovedCatalogue = asyncHandler(async (req, res) => {
+  const { auctionId, id } = req.params;
+  const { message } = req.body;
+  const userId = req.userId;
+  const auction = await auctionModel.findById(auctionId);
+  if (!auction) {
+    throw new ApiError(404, "Auction not found");
+  }
+  const catalogue = await catalogueModel.findByIdAndUpdate(
+    id,
+    {
+      $set: {
+        "industryApproval.status": "notApproval",
+        "industryApproval.approvalId": userId,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+  const catalogueActivitys = await catalogueActivity.create({
+    catalogue: catalogue._id,
+    activityType: "commands",
+    profile: userId,
+    commands: message,
+  });
+
+  const catalogueDetails = await catalogueModel.findByIdAndUpdate(id, {
+    $push: { activityId: catalogueActivitys._id },
+  });
+  return res.status(200).json(new ApiResponse(200, catalogueDetails));
+});
+
+const startingPriceUpdate = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { offers } = req.body;
+
+  const auction = await auctionModel.findById(id);
+  if (!auction) {
+    throw new ApiError(404, "Auction not found!.");
+  }
+  const OffersDetails = await offersModel.find({ auctionId: id });
+  OffersDetails.forEach(async (item) => {
+    const matchingOffer = offers.find(
+      (offerItems) => offerItems.offer.toString() === item._id.toString()
+    );
+    if (matchingOffer) {
+      item.startingPrice = matchingOffer.startingPrice;
+      await item.save({ validateBeforeSave: false });
+    }
+  });
+
+  return res.status(200).json(new ApiResponse(200, OffersDetails));
+});
+
+module.exports = {
+  createCoordinator,
+  updateCoordinator,
+  verifyDocument,
+  rejectDocument,
+  approvedCatalogue,
+  notApprovedCatalogue,
+  startingPriceUpdate,
+};

@@ -7,6 +7,7 @@ const { offersModel } = require("../../models/offer");
 const { uploadOnCloudinary } = require("../../utils/cloudinary");
 const { scrapImageModels } = require("../../models/scrapImage.model");
 const { materialClassificationModel } = require("../../models/MaterialScrap");
+const { catalogueModel } = require("../../models/catalogueModel");
 
 const createAuction = asyncHandler(async (req, res) => {
   const {
@@ -215,4 +216,34 @@ const addMaterialClassification = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { createAuction, createOffer, addMaterialClassification };
+const createCatalogue = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const auction = await auctionModel.findById(id);
+  if (!auction) {
+    throw new ApiError(404, "Auction not found.");
+  }
+  // if previuos created catalogue are delete
+  await catalogueModel.findOneAndDelete({ auction: id });
+
+  const cataloguePDF = await uploadOnCloudinary(req.file.path);
+  const catalogue = await catalogueModel.create({
+    fileName: req.file.originalname,
+    fileSize: req.file.size,
+    url: cataloguePDF.url,
+    auction: id,
+  });
+
+  const auctionDetails = await auctionModel.findByIdAndUpdate(id, {
+    $set: {
+      catalogue: catalogue._id,
+    },
+  });
+  return res.status(200).json(new ApiResponse(200, auctionDetails));
+});
+
+module.exports = {
+  createAuction,
+  createOffer,
+  addMaterialClassification,
+  createCatalogue,
+};

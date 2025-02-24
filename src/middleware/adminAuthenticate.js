@@ -12,7 +12,7 @@ const adminAuthenticate = asyncHandler(async (req, res, next) => {
   const decodedUserToken = jwt.verify(token, process.env.AUCTION_TOKEN_SECRET);
   const currentTime = Math.floor(Date.now() / 1000);
   if (decodedUserToken.exp && decodedUserToken.exp < currentTime) {
-    throw new ApiError(403, "Token expired.");
+    throw new ApiError(401, "Token expired.");
   }
 
   if (decodedUserToken.accountType !== "admin") {
