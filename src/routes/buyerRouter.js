@@ -10,6 +10,7 @@ const {
   allScrapList,
   selectScrapMaterial,
   enterGstNumber,
+  updateOrganization,
 } = require("../controllers/profile");
 const { upload } = require("../middleware/multer.middleware");
 const { buyerAuthenticate } = require("../middleware/buyerAuthenticate");
@@ -39,6 +40,12 @@ buyerRouters.put(
   craeteOrganization
 );
 buyerRouters.get("/profile/read/organization", validAuth, userOrganization);
+buyerRouters.put(
+  "/profile/update/organization-details",
+  validAuth,
+  updateOrganization
+);
+
 buyerRouters.put(
   "/profile/update/multi-documents",
   validAuth,

@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const { generateId, addNewSeller } = require("../config/authDetails");
 const { documentUploadModel } = require("../models/document");
 const { materialClassificationModel } = require("../models/MaterialScrap");
@@ -97,8 +98,22 @@ const craeteOrganization = asyncHandler(async (req, res) => {
 });
 
 const userOrganization = asyncHandler(async (req, res) => {
-  const organization = await organizationModel.findOne({ owner: req.userId });
-  return res.status(200).json(new ApiResponse(200, organization));
+  const organization = await organizationModel.aggregate([
+    { $match: { owner: new mongoose.Types.ObjectId(req.userId) } },
+    {
+      $lookup: {
+        from: "profilemodels",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [{ $project: { auctionToken: 0 } }],
+      },
+    },
+    {
+      $unwind: "$owner",
+    },
+  ]);
+  return res.status(200).json(new ApiResponse(200, organization[0]));
 });
 
 const uploadDocumentInOrganization = asyncHandler(async (req, res) => {
@@ -375,6 +390,11 @@ const iniviteNewSeller = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, organization));
 });
 
+const updateOrganization = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  
+});
+
 module.exports = {
   userProfile,
   userOrganization,
@@ -385,5 +405,6 @@ module.exports = {
   verifyAccountAndOrganization,
   blockrdAccountAndOrganization,
   iniviteNewSeller,
-  enterGstNumber
+  enterGstNumber,
+  updateOrganization,
 };

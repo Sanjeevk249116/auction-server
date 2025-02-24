@@ -5,6 +5,7 @@ const { ApiError } = require("./utils/apiError");
 const { buyerRouters } = require("./routes/buyerRouter");
 const { adminRouter } = require("./routes/adminRouter");
 const { commanRouter } = require("./routes/commanRouter");
+const { sellerRouter } = require("./routes/sellerRouter");
 const app = express();
 
 app.use(express.json({ limit: "1mb" }));
@@ -19,6 +20,7 @@ app.use(
 
 app.use("/", adminRouter);
 app.use("/", buyerRouters);
+app.use("/", sellerRouter);
 app.use("/", commanRouter);
 
 app.use((req, res) => {

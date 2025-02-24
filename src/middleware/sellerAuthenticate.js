@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const { ApiError } = require("../utils/apiError");
 require("dotenv").config();
 
-const sellerAuthenticate = asyncHandler(async (req, res) => {
+const sellerAuthenticate = asyncHandler(async (req, res,next) => {
   const token = req.header("auth-token");
 
   if (!token) {
