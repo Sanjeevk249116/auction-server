@@ -43,6 +43,7 @@ const {
   readTodayAuction,
   readUpcommingAuction,
   readCompletedAuction,
+  singleOffers,
 } = require("../controllers/commonController/read");
 const {
   startingPriceApproval,
@@ -187,6 +188,12 @@ adminRouter.get(
   "/auction/read/admin/single-seller-auctions/:id",
   adminAuthenticate,
   singleSellerAuctionList
+);
+
+adminRouter.get(
+  "/auction/read/admin/single-offer/:id",
+  adminAuthenticate,
+  singleOffers
 );
 
 adminRouter.get(

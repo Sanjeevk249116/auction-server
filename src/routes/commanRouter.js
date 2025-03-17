@@ -10,7 +10,6 @@ const {
   transactionHistory,
   withdrawAmount,
   refundAmount,
-  singleOffers,
   auctionCatalogue,
   getAllAuctionAnylitics,
 } = require("../controllers/commonController/read");
@@ -20,6 +19,7 @@ const {
   createTransaction,
 } = require("../controllers/commonController/update");
 const { profileLogout } = require("../controllers/auth.controller");
+const { chatbot } = require("../controllers/commonController/create");
 const commanRouter = express.Router();
 
 commanRouter.get("/auction/read/all-events", validAuth, readAllAuction);
@@ -76,16 +76,13 @@ commanRouter.get(
   validAuth,
   refundAmount
 );
-commanRouter.get(
-  "/auction/read/admin/single-offer/:id",
-  validAuth,
-  singleOffers
-);
+
 
 commanRouter.get(
   "/catalogue/read/all-catalogues/:id",
   validAuth,
   auctionCatalogue
 );
+commanRouter.post("/api/chatbot", chatbot);
 
 module.exports = { commanRouter };

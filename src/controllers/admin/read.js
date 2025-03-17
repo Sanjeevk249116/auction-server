@@ -122,15 +122,34 @@ const singleSellerAuctionList = asyncHandler(async (req, res) => {
     const status = req.query.filter;
     const skip = parseInt(req.query.skip) || 0;
     const limit = parseInt(req.query.limit) || 30;
-    const filter = { sellerId: id };
+    const filter = { sellerId:new mongoose.Types.ObjectId(id) };
     if (auctionType) {
       filter.auctionType = auctionType;
     }
     if (status) {
       filter.status = status;
     }
+    const auction = await auctionModel.aggregate([
+      { $match: filter },
+      { $sort: { "auctionSchedule.startDate": 1 } },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: "cataloguemodels",
+          localField: "catalogue",
+          foreignField: "_id",
+          as: "catalogue",
+        },
+      },
+      {
+        $unwind: {
+          path: "$catalogue",
+          preserveNullAndEmptyArrays: true, // Keeps the auction even if catalogue is missing
+        },
+      },
+    ]);
 
-    const auction = await auctionModel.find(filter).skip(skip).limit(limit);
     return res.status(200).json(new ApiResponse(200, auction));
   } catch (error) {
     console.log(error);
@@ -249,6 +268,7 @@ const singleAuctionCatalogueDetails = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, auctionDetails[0]));
 });
 
+
 module.exports = {
   readAllSeller,
   readAllBuyer,
@@ -260,5 +280,4 @@ module.exports = {
   singleSellerAuctionList,
   singleOrganizationWallet,
   singleAuctionCatalogueDetails,
-
 };
