@@ -8,6 +8,7 @@ const { documentUploadModel } = require("../../models/document");
 const { auctionModel } = require("../../models/auction");
 const { walletModel } = require("../../models/wallet.model");
 const { catalogueModel } = require("../../models/catalogueModel");
+const { subscriptionmodels } = require("../../models/Subscription.model");
 
 const readAllSeller = asyncHandler(async (req, res) => {
   try {
@@ -268,6 +269,10 @@ const singleAuctionCatalogueDetails = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, auctionDetails[0]));
 });
 
+const readArchivedSubscription = asyncHandler(async (req, res) => {
+  const subscription = await subscriptionmodels.find({ archived: true });
+  return res.status(200).json(new ApiResponse(200, subscription));
+});
 
 module.exports = {
   readAllSeller,
@@ -280,4 +285,5 @@ module.exports = {
   singleSellerAuctionList,
   singleOrganizationWallet,
   singleAuctionCatalogueDetails,
+  readArchivedSubscription
 };

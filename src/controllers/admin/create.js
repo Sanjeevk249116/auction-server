@@ -8,6 +8,8 @@ const { uploadOnCloudinary } = require("../../utils/cloudinary");
 const { scrapImageModels } = require("../../models/scrapImage.model");
 const { materialClassificationModel } = require("../../models/MaterialScrap");
 const { catalogueModel } = require("../../models/catalogueModel");
+const { checkMissingFields } = require("../../utils/checkFields");
+const { subscriptionmodels } = require("../../models/Subscription.model");
 
 const createAuction = asyncHandler(async (req, res) => {
   const {
@@ -100,12 +102,12 @@ const createOffer = asyncHandler(async (req, res) => {
   const scrapDetailValue = JSON.parse(scrapDetails);
   const offerSchedules = JSON.parse(offerSchedule);
 
-  const scrapType = await offersModel.findOne({
-    "scrapDetails.type": scrapDetailValue.type,
-  });
-  if (scrapType) {
-    throw new ApiError(400, "Scrap type is already added.");
-  }
+  // const scrapType = await offersModel.findOne({
+  //   "scrapDetails.type": scrapDetailValue.type,
+  // });
+  // if (scrapType) {
+  //   throw new ApiError(400, "Scrap type is already added.");
+  // }
 
   const offerTime = {
     startingTime: addDateAndTime(
@@ -241,9 +243,58 @@ const createCatalogue = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, auctionDetails));
 });
 
+const createSubscription = asyncHandler(async (req, res) => {
+  const {
+    afterDiscountPrice,
+    numberOfYears,
+    price,
+    savingsPercentage,
+    recommended,
+    features,
+    name,
+  } = req.body;
+  const requiredFields = [
+    "afterDiscountPrice",
+    "numberOfYears",
+    "price",
+    "savingsPercentage",
+    "features",
+    "name",
+  ];
+
+  const missingFields = checkMissingFields(req.body, requiredFields);
+
+  if (missingFields.length > 0) {
+    throw new ApiError(
+      400,
+      `The following fields are missing or empty: ${missingFields.join(", ")}`
+    );
+  }
+
+  const existPlan = await subscriptionmodels.findOne({ name: name });
+  if (existPlan) {
+    throw new ApiError(400, "plan is already exist.");
+  }
+  try {
+    const subscription = await subscriptionmodels.create({
+      afterDiscountPrice,
+      numberOfYears,
+      price,
+      savingsPercentage,
+      recommended,
+      features,
+      name,
+    });
+    return res.status(200).json(200, ApiResponse(200, subscription));
+  } catch (error) {
+    throw new ApiError(400, "failed to create subscription.");
+  }
+});
+
 module.exports = {
   createAuction,
   createOffer,
   addMaterialClassification,
   createCatalogue,
+  createSubscription,
 };

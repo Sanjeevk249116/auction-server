@@ -8,6 +8,7 @@ const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
 const { offersModel } = require("../../models/offer");
+const { subscriptionmodels } = require("../../models/Subscription.model");
 
 const createCoordinator = asyncHandler(async (req, res) => {
   try {
@@ -196,7 +197,75 @@ const startingPriceUpdate = asyncHandler(async (req, res) => {
     }
   });
 
+  await auctionModel.findByIdAndUpdate(id, {
+    "startingPriceApproval.status": "pending",
+    "startingPriceApproval.profile": null,
+  });
+
   return res.status(200).json(new ApiResponse(200, OffersDetails));
+});
+
+const updateSubscription = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const {
+    afterDiscountPrice,
+    numberOfYears,
+    price,
+    savingsPercentage,
+    recommended,
+    features,
+    name,
+  } = req.body;
+  const subscription = await subscriptionmodels.findById(id);
+  if (!subscription) {
+    throw new ApiError(400, "Subscription are not found.");
+  }
+  try {
+    const newSubscription = await subscriptionmodels.findByIdAndUpdate(
+      id,
+      {
+        afterDiscountPrice,
+        numberOfYears,
+        price,
+        savingsPercentage,
+        recommended,
+        features,
+        name,
+      },
+      { new: true }
+    );
+    return res.status(200).json(200, new ApiResponse(200, newSubscription));
+  } catch (error) {
+    throw new ApiError(400, "Failed to update subscription.");
+  }
+});
+
+const archivedSubscriptionPlan = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const subscription = await subscriptionmodels.findById(id);
+  if (!subscription) {
+    throw new ApiError(400, "Subscription not found.");
+  }
+  await subscriptionmodels.findByIdAndUpdate(id, {
+    archived: true,
+  });
+  return res
+    .status(200)
+    .json(200, ApiResponse(200, "plan archived successfully."));
+});
+
+const unarchivedSubscriptionPlan = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const subscription = await subscriptionmodels.findById(id);
+  if (!subscription) {
+    throw new ApiError(400, "Subscription not found.");
+  }
+  await subscriptionmodels.findByIdAndUpdate(id, {
+    archived: false,
+  });
+  return res
+    .status(200)
+    .json(200, ApiResponse(200, "plan unarchived successfully."));
 });
 
 module.exports = {
@@ -207,4 +276,7 @@ module.exports = {
   approvedCatalogue,
   notApprovedCatalogue,
   startingPriceUpdate,
+  updateSubscription,
+  archivedSubscriptionPlan,
+  unarchivedSubscriptionPlan
 };

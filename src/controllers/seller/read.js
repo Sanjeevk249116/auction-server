@@ -4,6 +4,7 @@ const { organizationModel } = require("../../models/organization.models");
 const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
+const { offersModel } = require("../../models/offer");
 
 const auctionList = asyncHandler(async (req, res) => {
   const userId = req.userId;
@@ -114,4 +115,41 @@ const sellerLiveAuction = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, { liveAuctions: auction }));
 });
 
-module.exports = { auctionList, sellerLiveAuction };
+const singleSellerOffers = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const offer = await offersModel.aggregate([
+    { $match: { _id: new mongoose.Types.ObjectId(id) } },
+    {
+      $lookup: {
+        from: "emdmodels",
+        localField: "depositedBy",
+        foreignField: "_id",
+        as: "depositedBy",
+        pipeline: [
+          {
+            $lookup: {
+              from: "profilemodels",
+              localField: "profile",
+              foreignField: "_id",
+              as: "profile",
+            },
+          },
+          {
+            $addFields: {
+              email: { $arrayElemAt: ["$profile.email", 0] },
+              phoneNumber: { $arrayElemAt: ["$profile.phoneNumber", 0] },
+            },
+          },
+          { $project: { profile: 0 } },
+        ],
+      },
+    },
+  ]);
+
+  if (!offer) {
+    throw new ApiError(400, "Offer not found.");
+  }
+  return res.status(200).json(new ApiResponse(200, offer[0]));
+});
+
+module.exports = { auctionList, sellerLiveAuction,singleSellerOffers };

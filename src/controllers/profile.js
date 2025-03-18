@@ -343,14 +343,6 @@ const iniviteNewSeller = asyncHandler(async (req, res) => {
       `The following fields are missing or empty: ${missingFields.join(", ")}`
     );
   }
-
-  await addNewSeller({
-    name,
-    email,
-    phoneNumber,
-    password: "InviteNewSeller@123",
-  });
-
   const profileExist = await profileModel.findOne({
     $or: [{ email }, { phoneNumber }],
   });
@@ -358,6 +350,13 @@ const iniviteNewSeller = asyncHandler(async (req, res) => {
   if (profileExist) {
     throw new ApiError(400, "Seller account is already created.");
   }
+  
+  await addNewSeller({
+    name,
+    email,
+    phoneNumber,
+    password: "MyPassword@123",
+  });
 
   const profile = await profileModel.create({
     email: email,
@@ -365,6 +364,7 @@ const iniviteNewSeller = asyncHandler(async (req, res) => {
     phoneNumber: phoneNumber,
     accountType: "seller",
     accountSetUp: true,
+    verifiedUser: "verified",
   });
 
   const organization = await organizationModel.create({
@@ -383,7 +383,28 @@ const iniviteNewSeller = asyncHandler(async (req, res) => {
     from: process.env.EMAIL_USER,
     to: email,
     subject: "Welcome!",
-    text: `Thank you for signing up with us. emailId:${email}  Password: InviteNewSeller@123`,
+    html: `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 
+          auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
+      <h2 style="text-align: center; color: #4CAF50;">Welcome to Our Platform!</h2>
+      <p>Hello,</p>
+      <p>Thank you for signing up with us. Below are your login credentials:</p>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd;"><strong>Email ID:</strong></td>
+          <td style="padding: 10px; border: 1px solid #ddd;">${email}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd;"><strong>Password:</strong></td>
+          <td style="padding: 10px; border: 1px solid #ddd;"><strong style="color: 
+              red;">MyPassword@123</strong></td>
+        </tr>
+      </table>
+      <p>Please change your password after logging in for security reasons.</p>
+      <p>If you have any questions, feel free to contact our support team.</p>
+      <p>Best Regards,<br><strong> Sanjeev Kushwaha</strong></p>
+    </div>
+  `,
   };
 
   await sendMailToUser(mailOptions);
@@ -392,7 +413,6 @@ const iniviteNewSeller = asyncHandler(async (req, res) => {
 
 const updateOrganization = asyncHandler(async (req, res) => {
   const userId = req.userId;
-  
 });
 
 module.exports = {

@@ -10,6 +10,7 @@ const {
   singleSellerAuctionList,
   singleOrganizationWallet,
   singleAuctionCatalogueDetails,
+  readArchivedSubscription,
 } = require("../controllers/admin/read");
 const { adminAuthenticate } = require("../middleware/adminAuthenticate");
 const {
@@ -20,16 +21,21 @@ const {
   approvedCatalogue,
   notApprovedCatalogue,
   startingPriceUpdate,
+  updateSubscription,
+  archivedSubscriptionPlan,
+  unarchivedSubscriptionPlan,
 } = require("../controllers/admin/update");
 const {
   deleteCoordinator,
   deleteScrapItems,
+  deleteSubscriptionPlan,
 } = require("../controllers/admin/delete");
 const {
   createAuction,
   createOffer,
   addMaterialClassification,
   createCatalogue,
+  createSubscription,
 } = require("../controllers/admin/create");
 
 const { upload } = require("../middleware/multer.middleware");
@@ -237,6 +243,42 @@ adminRouter.put(
   "/auction/update/admin/starting-price-approval/:id",
   adminAuthenticate,
   startingPriceApproval
+);
+
+adminRouter.post(
+  "/subscription/create/new-subscription",
+  adminAuthenticate,
+  createSubscription
+);
+
+adminRouter.put(
+  "/subscription/update/:id",
+  adminAuthenticate,
+  updateSubscription
+);
+
+adminRouter.put(
+  "/subscription/update/archive/:id",
+  adminAuthenticate,
+  archivedSubscriptionPlan
+);
+
+adminRouter.put(
+  "/subscription/update/unarchive/:id",
+  adminAuthenticate,
+  unarchivedSubscriptionPlan
+);
+
+adminRouter.get(
+  "/subscription/read/archive",
+  adminAuthenticate,
+  readArchivedSubscription
+);
+
+adminRouter.delete(
+  "/subscription/delete/:id",
+  adminAuthenticate,
+  deleteSubscriptionPlan
 );
 
 module.exports = { adminRouter };

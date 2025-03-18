@@ -12,6 +12,9 @@ const {
   refundAmount,
   auctionCatalogue,
   getAllAuctionAnylitics,
+  singleCatalogueView,
+  readSubscription,
+  readSingleSubscription,
 } = require("../controllers/commonController/read");
 const { myWallet } = require("../controllers/commonController/read");
 const {
@@ -77,12 +80,24 @@ commanRouter.get(
   refundAmount
 );
 
-
+commanRouter.get(
+  "/catalogue/read/single-file/:id",
+  validAuth,
+  singleCatalogueView
+);
 commanRouter.get(
   "/catalogue/read/all-catalogues/:id",
   validAuth,
   auctionCatalogue
 );
+commanRouter.get("/subscription/read", validAuth, readSubscription);
+
+commanRouter.get(
+  "/subscription/read/single-plan/:id",
+  validAuth,
+  readSingleSubscription
+);
+
 commanRouter.post("/api/chatbot", chatbot);
 
 module.exports = { commanRouter };

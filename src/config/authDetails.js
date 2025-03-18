@@ -25,11 +25,12 @@ const generateId = (orgName) => {
 const addNewSeller = async (sellerObj) => {
   try {
     const response = await axios.post(
-      `${process.env.SERVER_URL}/user/register-newSeller`,
+      `${process.env.SERVER_URL}/register-newSeller`,
       sellerObj
     );
     return response?.data?.data;
   } catch (error) {
+    console.log(error)
     await deleteFailedInvite(sellerObj.email);
     throw new ApiError(400, "unable to invite new seller.");
   }

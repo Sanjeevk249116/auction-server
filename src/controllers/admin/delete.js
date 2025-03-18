@@ -1,5 +1,6 @@
 const { coordinatorModel } = require("../../models/coordinator");
 const { materialClassificationModel } = require("../../models/MaterialScrap");
+const { subscriptionmodels } = require("../../models/Subscription.model");
 const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
@@ -28,4 +29,19 @@ const deleteScrapItems = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "delete scrap successfully."));
 });
 
-module.exports = { deleteCoordinator, deleteScrapItems };
+const deleteSubscriptionPlan = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const subscription = await subscriptionmodels.findByIdAndDelete(id);
+  if (!subscription) {
+    throw new ApiError(400, "Subscription not found.");
+  }
+  return res
+    .status(200)
+    .json( new ApiResponse(200, "Subscription plane delete successfully."));
+});
+
+module.exports = {
+  deleteCoordinator,
+  deleteScrapItems,
+  deleteSubscriptionPlan,
+};

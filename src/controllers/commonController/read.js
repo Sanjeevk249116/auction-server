@@ -8,6 +8,10 @@ const { walletModel } = require("../../models/wallet.model");
 const { transactionModel } = require("../../models/transaction");
 const { offersModel } = require("../../models/offer");
 const { catalogueModel } = require("../../models/catalogueModel");
+const { v2: cloudinary } = require("cloudinary");
+const axios = require("axios");
+const { subscriptionmodels } = require("../../models/Subscription.model");
+const { organizationModel } = require("../../models/organization.models");
 
 const readAllAuction = asyncHandler(async (req, res) => {
   try {
@@ -275,7 +279,7 @@ const readSingleAuction = asyncHandler(async (req, res) => {
     {
       $unwind: {
         path: "$inspectionRequest",
-        preserveNullAndEmptyArrays: true, 
+        preserveNullAndEmptyArrays: true,
       },
     },
   ]);
@@ -362,11 +366,39 @@ const refundAmount = asyncHandler(async (req, res) => {
 
 const singleOffers = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const offer = await offersModel.findById(id);
+  const offer = await offersModel.aggregate([
+    { $match: { _id: new mongoose.Types.ObjectId(id) } },
+    {
+      $lookup: {
+        from: "emdmodels",
+        localField: "depositedBy",
+        foreignField: "_id",
+        as: "depositedBy",
+        pipeline: [
+          {
+            $lookup: {
+              from: "profilemodels",
+              localField: "profile",
+              foreignField: "_id",
+              as: "profile",
+            },
+          },
+          {
+            $addFields: {
+              email: { $arrayElemAt: ["$profile.email", 0] },
+              phoneNumber: { $arrayElemAt: ["$profile.phoneNumber", 0] },
+            },
+          },
+          { $project: { profile: 0 } },
+        ],
+      },
+    },
+  ]);
+
   if (!offer) {
     throw new ApiError(400, "Offer not found.");
   }
-  return res.status(200).json(new ApiResponse(200, offer));
+  return res.status(200).json(new ApiResponse(200, offer[0]));
 });
 
 const auctionCatalogue = asyncHandler(async (req, res) => {
@@ -435,6 +467,7 @@ const auctionCatalogue = asyncHandler(async (req, res) => {
 });
 
 const getAllAuctionAnylitics = asyncHandler(async (req, res) => {
+  const userId = req.userId;
   const now = new Date();
   await auctionModel.updateMany(
     {
@@ -455,8 +488,18 @@ const getAllAuctionAnylitics = asyncHandler(async (req, res) => {
     { $set: { status: "completed" } }
   );
 
-  const upcomingAuctions = await auctionModel.find({ status: "upcomming" });
-  const completedAuctions = await auctionModel.find({ status: "completed" });
+  const organization = await organizationModel.findOne({ owner: userId });
+  if (!organization) {
+    throw new ApiError(400, "user does not exist.");
+  }
+
+  const upcomingAuctions = await auctionModel.find({
+    $and: [{ status: "upcomming" }, { sellerId: organization._id }],
+  });
+  const completedAuctions = await auctionModel.find({
+    $and: [{ status: "completed" }, { sellerId: organization._id }],
+  });
+
   const analytics = {
     upcomingAuctions: upcomingAuctions.length,
     completedAuctions: completedAuctions.length,
@@ -465,6 +508,38 @@ const getAllAuctionAnylitics = asyncHandler(async (req, res) => {
   };
 
   return res.status(200).json(new ApiResponse(200, analytics));
+});
+
+const singleCatalogueView = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const fileData = await catalogueModel.findById(id);
+  if (!fileData) {
+    throw new ApiError(400, "file not fount.");
+  }
+  try {
+    const fileUrl = fileData.url;
+    const response = await axios.get(fileUrl, { responseType: "arraybuffer" });
+    console.log(response);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="${id}.pdf"`);
+    res.send(Buffer.from(response.data));
+  } catch (error) {
+    throw new ApiError(400, error);
+  }
+});
+
+const readSubscription = asyncHandler(async (req, res) => {
+  const subscription = await subscriptionmodels.find({ archived: false });
+  return res.status(200).json(new ApiResponse(200, subscription));
+});
+
+const readSingleSubscription = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const subscription = await subscriptionmodels.findById(id);
+  if (!subscription) {
+    throw new ApiError(400, "Subscription not found.");
+  }
+  return res.status(200).json(new ApiResponse(200, subscription));
 });
 
 module.exports = {
@@ -480,5 +555,8 @@ module.exports = {
   refundAmount,
   singleOffers,
   auctionCatalogue,
-  getAllAuctionAnylitics
+  getAllAuctionAnylitics,
+  singleCatalogueView,
+  readSubscription,
+  readSingleSubscription,
 };
