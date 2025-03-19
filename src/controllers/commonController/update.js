@@ -146,10 +146,11 @@ const startingPriceReject = asyncHandler(async (req, res) => {
   }
 });
 
+
 module.exports = {
   addBankAccount,
   createTransaction,
   transactionRecord,
   startingPriceApproval,
-  startingPriceReject
+  startingPriceReject,
 };

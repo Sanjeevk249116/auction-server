@@ -20,6 +20,7 @@ const { myWallet } = require("../controllers/commonController/read");
 const {
   addBankAccount,
   createTransaction,
+  changePassword,
 } = require("../controllers/commonController/update");
 const { profileLogout } = require("../controllers/auth.controller");
 const { chatbot } = require("../controllers/commonController/create");
@@ -97,6 +98,7 @@ commanRouter.get(
   validAuth,
   readSingleSubscription
 );
+
 
 commanRouter.post("/api/chatbot", chatbot);
 
