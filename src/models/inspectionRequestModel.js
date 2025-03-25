@@ -16,13 +16,22 @@ const inspectionRequestSchema = new mongoose.Schema(
     inspectionDate: {
       type: String,
     },
+    inspectionCompletedDate: {
+      type: String,
+    },
     offers: [{ type: mongoose.Schema.Types.ObjectId, ref: "offersModel" }],
     profile: { type: mongoose.Schema.Types.ObjectId, ref: "profileModel" },
     auctionId: { type: mongoose.Schema.Types.ObjectId, ref: "auctionModel" },
+    response: [{ type: String }],
     status: {
       type: String,
-      enum: ["pending", "completed"],
+      enum: ["pending", "approved"],
       default: "pending",
+    },
+    requestStatus: {
+      type: String,
+      default: "pending",
+      enum: ["pending", "sended", "rejected", "accepted"],
     },
   },
   { timestamps: true }

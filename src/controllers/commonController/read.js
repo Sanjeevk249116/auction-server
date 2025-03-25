@@ -466,50 +466,6 @@ const auctionCatalogue = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, catalogue[0]));
 });
 
-const getAllAuctionAnylitics = asyncHandler(async (req, res) => {
-  const userId = req.userId;
-  const now = new Date();
-  await auctionModel.updateMany(
-    {
-      "auctionSchedule.startDate": { $gt: now },
-      status: { $ne: "upcomming" },
-    },
-    { $set: { status: "upcomming" } },
-    { new: true }
-  );
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  await auctionModel.updateMany(
-    {
-      "auctionSchedule.startDate": { $lt: today },
-      status: { $ne: "completed" },
-    },
-    { $set: { status: "completed" } }
-  );
-
-  const organization = await organizationModel.findOne({ owner: userId });
-  if (!organization) {
-    throw new ApiError(400, "user does not exist.");
-  }
-
-  const upcomingAuctions = await auctionModel.find({
-    $and: [{ status: "upcomming" }, { sellerId: organization._id }],
-  });
-  const completedAuctions = await auctionModel.find({
-    $and: [{ status: "completed" }, { sellerId: organization._id }],
-  });
-
-  const analytics = {
-    upcomingAuctions: upcomingAuctions.length,
-    completedAuctions: completedAuctions.length,
-    wonAuctions: 0,
-    depositedOffers: 0,
-  };
-
-  return res.status(200).json(new ApiResponse(200, analytics));
-});
-
 const singleCatalogueView = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const fileData = await catalogueModel.findById(id);
@@ -555,7 +511,6 @@ module.exports = {
   refundAmount,
   singleOffers,
   auctionCatalogue,
-  getAllAuctionAnylitics,
   singleCatalogueView,
   readSubscription,
   readSingleSubscription,

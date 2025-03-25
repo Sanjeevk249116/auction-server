@@ -32,6 +32,9 @@ const profileSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    profileImage: {
+      type: String,
+    },
     oragnization: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "organizationModel",

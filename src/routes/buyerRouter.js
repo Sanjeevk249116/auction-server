@@ -18,11 +18,14 @@ const {
   readBuyerDocuments,
   transactionChart,
   readInspectionRequest,
+  getAllAuctionAnyliticsForBuyer,
+  getAuctionsWithPcbRequired,
 } = require("../controllers/buyer/read");
 const {
   uploadFiles,
   payEmdDeposit,
   inspectionRequest,
+  sendResponseOfInspection,
 } = require("../controllers/buyer/create");
 const buyerRouters = express.Router();
 
@@ -106,9 +109,27 @@ buyerRouters.post(
   buyerAuthenticate,
   inspectionRequest
 );
+
 buyerRouters.get(
   "/profile/read/inspections-requested",
   buyerAuthenticate,
   readInspectionRequest
+);
+buyerRouters.get(
+  "/auction/read/pcb-offers",
+  buyerAuthenticate,
+  getAuctionsWithPcbRequired
+);
+
+buyerRouters.post(
+  "/auction/create/inspection-response/:id",
+  buyerAuthenticate,
+  sendResponseOfInspection
+);
+
+buyerRouters.get(
+  "/profile/read/buyer/analytics",
+  buyerAuthenticate,
+  getAllAuctionAnyliticsForBuyer
 );
 module.exports = { buyerRouters };

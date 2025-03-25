@@ -1,11 +1,13 @@
 const { auctionModel } = require("../../models/auction");
 const { bankAccountModel } = require("../../models/bankAccount.model");
+const { profileModel } = require("../../models/profile.models");
 const { transactionModel } = require("../../models/transaction");
 const { walletModel } = require("../../models/wallet.model");
 const { ApiError } = require("../../utils/apiError");
 const { ApiResponse } = require("../../utils/apiResponse");
 const { asyncHandler } = require("../../utils/asyncHandler");
 const { checkMissingFields } = require("../../utils/checkFields");
+const { uploadOnCloudinary } = require("../../utils/cloudinary");
 
 const addBankAccount = asyncHandler(async (req, res) => {
   const userId = req.userId;
@@ -146,6 +148,29 @@ const startingPriceReject = asyncHandler(async (req, res) => {
   }
 });
 
+const updateProfileImage = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const profile = await profileModel.findById(userId);
+  if (!profile) {
+    throw new ApiError(400, "Profile is not exist.");
+  }
+
+  const profileImage = req.file.path;
+  if (!profileImage) {
+    throw new ApiError(400, "Please update profile image.");
+  }
+
+  const profileImageUrl = await uploadOnCloudinary(profileImage);
+  if (!profileImageUrl.url) {
+    throw new ApiError(400, "failed to upload image.");
+  }
+
+  profile.profileImage = profileImageUrl.url;
+  await profile.save({ validateBeforeSave: false });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Profile update successfully."));
+});
 
 module.exports = {
   addBankAccount,
@@ -153,4 +178,5 @@ module.exports = {
   transactionRecord,
   startingPriceApproval,
   startingPriceReject,
+  updateProfileImage,
 };

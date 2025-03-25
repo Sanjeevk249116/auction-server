@@ -4,6 +4,8 @@ const {
   auctionList,
   sellerLiveAuction,
   singleSellerOffers,
+  getAllAuctionAnylitics,
+  inpectionResponse,
 } = require("../controllers/seller/read");
 const { createAuctionAnalytics } = require("../controllers/seller/create");
 const {
@@ -13,6 +15,7 @@ const {
 const {
   notApprovedCatalogues,
   approvedCatalogues,
+  inspectionAcceptance,
 } = require("../controllers/seller/update");
 const sellerRouter = express.Router();
 
@@ -55,6 +58,24 @@ sellerRouter.put(
   "/catalogue/update/catalogue-approvale/:auctionId/:id",
   sellerAuthenticate,
   approvedCatalogues
+);
+
+sellerRouter.get(
+  "/profile/read/seller/analytics",
+  sellerAuthenticate,
+  getAllAuctionAnylitics
+);
+
+sellerRouter.get(
+  "/auction/read/requested-inspection",
+  sellerAuthenticate,
+  inpectionResponse
+);
+
+sellerRouter.put(
+  "/auction/read/requested-inspection-appectance/:id",
+  sellerAuthenticate,
+  inspectionAcceptance
 );
 
 module.exports = { sellerRouter };

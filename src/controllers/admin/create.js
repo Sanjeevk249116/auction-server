@@ -11,6 +11,7 @@ const { catalogueModel } = require("../../models/catalogueModel");
 const { checkMissingFields } = require("../../utils/checkFields");
 const { subscriptionmodels } = require("../../models/Subscription.model");
 
+
 const createAuction = asyncHandler(async (req, res) => {
   const {
     EMDSchedule,
@@ -290,6 +291,27 @@ const createSubscription = asyncHandler(async (req, res) => {
     throw new ApiError(400, "failed to create subscription.");
   }
 });
+
+const readPdfSection = asyncHandler(async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded." });
+    }
+
+    const dataBuffer = fs.readFileSync(req.file.path);
+    const data = await pdfParse(dataBuffer);
+    const structuredData = extractSections(data.text);
+
+    console.log(structuredData);
+    res.json({ structuredData });
+  } catch (error) {
+    console.error("PDF Processing Error:", error);
+    res
+      .status(500)
+      .json({ error: "Internal server error", details: error.message });
+  }
+});
+
 
 module.exports = {
   createAuction,

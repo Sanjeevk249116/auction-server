@@ -11,7 +11,6 @@ const {
   withdrawAmount,
   refundAmount,
   auctionCatalogue,
-  getAllAuctionAnylitics,
   singleCatalogueView,
   readSubscription,
   readSingleSubscription,
@@ -21,9 +20,11 @@ const {
   addBankAccount,
   createTransaction,
   changePassword,
+  updateProfileImage,
 } = require("../controllers/commonController/update");
 const { profileLogout } = require("../controllers/auth.controller");
 const { chatbot } = require("../controllers/commonController/create");
+const { upload } = require("../middleware/multer.middleware");
 const commanRouter = express.Router();
 
 commanRouter.get("/auction/read/all-events", validAuth, readAllAuction);
@@ -57,7 +58,6 @@ commanRouter.get(
   validAuth,
   downloadSingleDocument
 );
-commanRouter.get("/profile/read/analytics", validAuth, getAllAuctionAnylitics);
 commanRouter.get("/wallet/read/my-wallet", validAuth, myWallet);
 commanRouter.put("/profile/update/add-bank-details", validAuth, addBankAccount);
 commanRouter.post(
@@ -99,6 +99,12 @@ commanRouter.get(
   readSingleSubscription
 );
 
+commanRouter.put(
+  "/profile/update/profile-image",
+  validAuth,
+  upload.single("profileImage"),
+  updateProfileImage
+);
 
 commanRouter.post("/api/chatbot", chatbot);
 

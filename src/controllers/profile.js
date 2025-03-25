@@ -350,7 +350,7 @@ const iniviteNewSeller = asyncHandler(async (req, res) => {
   if (profileExist) {
     throw new ApiError(400, "Seller account is already created.");
   }
-  
+
   await addNewSeller({
     name,
     email,
@@ -413,6 +413,21 @@ const iniviteNewSeller = asyncHandler(async (req, res) => {
 
 const updateOrganization = asyncHandler(async (req, res) => {
   const userId = req.userId;
+  const { organizationName, location } = req.body;
+
+  const organization = await organizationModel.findOne({ owner: userId });
+  if (!organization) {
+    throw new ApiError(400, "Organization not found.");
+  }
+
+  organization.organizationName = organizationName;
+  organization.location = location;
+
+  const updatedOrganization = await organization.save({
+    validateBeforeSave: false,
+  }); 
+
+  return res.status(200).json(new ApiResponse(200, updatedOrganization));
 });
 
 module.exports = {
